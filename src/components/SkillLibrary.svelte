@@ -35,16 +35,6 @@
     return () => returnTo?.focus();
   });
 
-  // Tell the shell to shed its own glass while the sheet is up (see app.css).
-  $effect(() => {
-    if (!open) return;
-    const root = document.documentElement;
-    root.dataset.overlay = 'true';
-    return () => {
-      delete root.dataset.overlay;
-    };
-  });
-
   let filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
     if (q === '') return SKILL_LIBRARY;
@@ -89,26 +79,28 @@
 
 <!-- Kept mounted on purpose: a freshly inserted backdrop-filter surface paints
      unblurred for the first frames while the compositor rasters the blur.
-     Keeping the layer alive (same trick as the drawer) means the glass is
-     already blurred on the first painted frame. -->
+     The scrim (the only blurred layer) mounts with the dialog, the panel is a
+     plain opaque sibling, so no text can bleed through even mid-animation. -->
 <div
   class={`fixed inset-0 z-50 flex items-center justify-center p-3 ${open ? '' : 'pointer-events-none'}`}
   inert={!open}
   aria-hidden={open ? undefined : 'true'}
 >
-  <button
-    type="button"
-    tabindex="-1"
-    aria-hidden="true"
-    class={`absolute inset-0 bg-black/55 transition-opacity duration-150 ease-out ${open ? 'opacity-100' : 'opacity-0'}`}
-    onclick={() => onClose?.()}
-  ></button>
+  {#if open}
+    <button
+      type="button"
+      tabindex="-1"
+      aria-hidden="true"
+      class="pf-scrim absolute inset-0"
+      onclick={() => onClose?.()}
+    ></button>
+  {/if}
 
   <div
     bind:this={dialogEl}
     onkeydown={trapTab}
     tabindex="-1"
-    class={`glass glass-overlay relative flex max-h-[min(85dvh,44rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] transition-opacity duration-150 ease-out ${open ? 'opacity-100' : 'opacity-0'}`}
+    class={`pf-sheet relative flex max-h-[min(85dvh,44rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] transition-[transform,opacity] duration-200 ease-out ${open ? 'scale-100 opacity-100' : 'scale-[0.97] opacity-0'}`}
     role="dialog"
     aria-modal="true"
     aria-labelledby="skill-library-title"

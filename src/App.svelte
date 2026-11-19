@@ -47,6 +47,14 @@
     wasOpen = isOpen;
   });
 
+  // While an overlay is up, the shell behind it drops its own glass: the scrim
+  // already blurs everything, and one blurred chain is all Blink can raster.
+  $effect(() => {
+    const root = document.documentElement;
+    if (sidebarOpen || libraryOpen) root.dataset.overlay = 'true';
+    else delete root.dataset.overlay;
+  });
+
   function handleTabKey(event: KeyboardEvent): void {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
@@ -76,26 +84,32 @@
   <Header bind:sidebarOpen />
 
   <div class="flex min-h-0 flex-1 gap-2.5">
-    {#if sidebarOpen}
-      <button
-        type="button"
-        class="fixed inset-0 z-30 bg-black/45 backdrop-blur-[2px] lg:hidden"
-        aria-label="Close sidebar"
-        onclick={closeSidebar}
-      ></button>
-    {/if}
-
-    <aside
-      id="doc-drawer"
-      inert={drawerInert}
-      aria-hidden={drawerInert ? 'true' : undefined}
-      class={`fixed bottom-3 left-3 right-3 top-[68px] z-40 transition-[translate,opacity] duration-[340ms] ease-out lg:static lg:inset-auto lg:z-auto lg:w-[19rem] lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto lg:transition-none ${sidebarOpen ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-[110%] opacity-0'}`}
-      aria-label="Document library"
+    <!-- Mobile drawer portal: a plain fixed root with no transform, no opacity
+         and no filter, so the scrim's backdrop-filter never sits inside a
+         transformed/transparent group (Blink defers the filter until the
+         compositor repaints). Scrim and panel are direct siblings. -->
+    <div
+      class={`fixed inset-0 z-40 ${sidebarOpen ? '' : 'pointer-events-none'} lg:static lg:z-auto lg:w-[19rem] lg:shrink-0`}
     >
-      <div class="glass h-full overflow-hidden rounded-[20px]">
+      {#if sidebarOpen}
+        <button
+          type="button"
+          class="pf-scrim absolute inset-0 lg:hidden"
+          aria-label="Close sidebar"
+          onclick={closeSidebar}
+        ></button>
+      {/if}
+
+      <aside
+        id="doc-drawer"
+        inert={drawerInert}
+        aria-hidden={drawerInert ? 'true' : undefined}
+        class={`pf-drawer absolute inset-x-3 bottom-3 top-[68px] z-10 overflow-hidden rounded-[20px] transition-transform duration-300 ease-out lg:static lg:inset-auto lg:h-full lg:w-full lg:translate-x-0 lg:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-[110%]'}`}
+        aria-label="Document library"
+      >
         <Sidebar onNavigate={closeSidebar} onOpenLibrary={() => (libraryOpen = true)} />
-      </div>
-    </aside>
+      </aside>
+    </div>
 
     <main class="glass flex min-w-0 flex-1 flex-col overflow-hidden rounded-[20px]">
       <div class="shrink-0 px-3 pt-2.5 lg:hidden">

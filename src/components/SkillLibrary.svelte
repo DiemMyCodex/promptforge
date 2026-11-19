@@ -35,6 +35,16 @@
     return () => returnTo?.focus();
   });
 
+  // Tell the shell to shed its own glass while the sheet is up (see app.css).
+  $effect(() => {
+    if (!open) return;
+    const root = document.documentElement;
+    root.dataset.overlay = 'true';
+    return () => {
+      delete root.dataset.overlay;
+    };
+  });
+
   let filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
     if (q === '') return SKILL_LIBRARY;
@@ -90,7 +100,7 @@
     type="button"
     tabindex="-1"
     aria-hidden="true"
-    class={`absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity duration-200 ease-out ${open ? 'opacity-100' : 'opacity-0'}`}
+    class={`absolute inset-0 bg-black/55 transition-opacity duration-150 ease-out ${open ? 'opacity-100' : 'opacity-0'}`}
     onclick={() => onClose?.()}
   ></button>
 
@@ -98,7 +108,7 @@
     bind:this={dialogEl}
     onkeydown={trapTab}
     tabindex="-1"
-    class={`glass relative flex max-h-[min(85dvh,44rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] transition-[transform,opacity] duration-[220ms] ease-out ${open ? 'scale-100 opacity-100' : 'scale-[0.97] opacity-0'}`}
+    class={`glass glass-overlay relative flex max-h-[min(85dvh,44rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] transition-opacity duration-150 ease-out ${open ? 'opacity-100' : 'opacity-0'}`}
     role="dialog"
     aria-modal="true"
     aria-labelledby="skill-library-title"

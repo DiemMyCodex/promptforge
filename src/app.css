@@ -149,6 +149,27 @@ select {
   }
 }
 
+/* Modal sheet: a 28px blur over the full app is the most expensive surface in
+   the app, and it is what makes the panel pop in sharp on a phone. A tighter
+   radius without the extra saturate pass rasters far faster and reads the same
+   over a 55% dim. */
+.glass-overlay {
+  backdrop-filter: blur(16px);
+}
+
+@media (max-width: 1023px) {
+  .glass-overlay {
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* While a modal is up the page behind sits under a dim, so its own glass does
+   not need a filter. Dropping it keeps the overlay from having to raster a
+   chain of nested blurred surfaces. */
+:root[data-overlay="true"] .glass:not(.glass-overlay) {
+  backdrop-filter: none;
+}
+
 .group-card {
   border: 1px solid var(--color-separator);
   border-radius: 14px;

@@ -6,6 +6,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
+**Live demo:** https://promptforge-three-flax.vercel.app
+
 A local-first Prompt & Skill Studio for AI coding agents. Draft `AGENTS.md`, `SKILL.md`, Master Prompts and provider snippets, watch a safe live Markdown preview, then copy or export the `.md` — entirely in your browser.
 
 No backend. No database. No account. No API keys. Nothing leaves your device.

@@ -143,12 +143,9 @@ class WorkspaceStore {
           : (this.items[0]?.id ?? null);
 
       this.dedupeSkillDocs();
-      if (persisted.librarySeeded === true) {
-        this.librarySeeded = true;
-      } else {
-        // One-time backfill: existing visitors get all bundled skills as documents.
-        this.ensureLibrary();
-      }
+      this.librarySeeded = persisted.librarySeeded === true;
+      // Idempotent: re-adds any bundled skill doc removed from local storage.
+      this.ensureLibrary();
       if (persisted.libraryRevision !== LIBRARY_REVISION) {
         this.refreshLibrary();
         this.persist();

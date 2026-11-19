@@ -9,6 +9,8 @@ export interface PromptItem {
   favorite: boolean;
   createdAt: number;
   updatedAt: number;
+  /** Hash of the bundled content when this doc was seeded from SKILL_LIBRARY. */
+  sourceHash?: string;
 }
 
 export type FrontmatterValue = string | number | boolean | string[];

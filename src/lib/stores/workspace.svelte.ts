@@ -1,16 +1,21 @@
 import { SKILL_LIBRARY } from '../skill-library';
 import { TEMPLATES } from '../templates';
 import type { EditorTab, PromptItem, PromptKind, TemplatePreset, ThemeMode } from '../types';
+import { hashText } from '../utils/hash';
 
 const STORAGE_KEY = 'promptforge.workspace.v1';
 const THEME_KEY = 'promptforge.theme.v1';
 const KINDS: PromptKind[] = ['skill', 'agents', 'master', 'provider', 'snippet'];
+const LIBRARY_REVISION = hashText(
+  SKILL_LIBRARY.map((skill) => `${skill.id}:${skill.content}`).join('\n')
+);
 
 interface PersistedWorkspace {
   version: 1;
   items: PromptItem[];
   selectedId: string | null;
   librarySeeded?: boolean;
+  libraryRevision?: string;
 }
 
 function createId(): string {
@@ -55,12 +60,16 @@ function normalizeItem(value: PromptItem): PromptItem {
     tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
     favorite: value.favorite === true,
     createdAt: Number.isFinite(value.createdAt) ? value.createdAt : now,
-    updatedAt: Number.isFinite(value.updatedAt) ? value.updatedAt : now
+    updatedAt: Number.isFinite(value.updatedAt) ? value.updatedAt : now,
+    ...(typeof value.sourceHash === 'string' ? { sourceHash: value.sourceHash } : {})
   };
 }
 
 function makeItem(
-  partial: Pick<PromptItem, 'title' | 'kind' | 'content' | 'tags'> & { id?: string }
+  partial: Pick<PromptItem, 'title' | 'kind' | 'content' | 'tags'> & {
+    id?: string;
+    sourceHash?: string;
+  }
 ): PromptItem {
   const now = Date.now();
   const { id, ...rest } = partial;
@@ -82,6 +91,18 @@ function inferKind(fileName: string, content: string): PromptKind {
   if (/master prompt|build brief/i.test(head)) return 'master';
   if (/opencode|"provider"\s*:/i.test(head)) return 'provider';
   return 'snippet';
+}
+
+function isBundledDoc(item: PromptItem, skill: TemplatePreset): boolean {
+  if (typeof item.sourceHash === 'string') {
+    return item.sourceHash === hashText(item.content);
+  }
+  // Legacy docs seeded before sourceHash existed: match the bundle signature.
+  return (
+    item.title === skill.label &&
+    item.tags.includes('library') &&
+    item.content.includes(`\nname: ${skill.label}\n`)
+  );
 }
 
 class WorkspaceStore {
@@ -132,11 +153,16 @@ class WorkspaceStore {
           ? persisted.selectedId
           : (this.items[0]?.id ?? null);
 
+      this.dedupeSkillDocs();
       if (persisted.librarySeeded === true) {
         this.librarySeeded = true;
       } else {
         // One-time backfill: existing visitors get all bundled skills as documents.
         this.ensureLibrary();
+      }
+      if (persisted.libraryRevision !== LIBRARY_REVISION) {
+        this.refreshLibrary();
+        this.persist();
       }
     } else {
       this.seed();
@@ -173,7 +199,8 @@ class WorkspaceStore {
       version: 1,
       items: this.items,
       selectedId: this.selectedId,
-      librarySeeded: this.librarySeeded
+      librarySeeded: this.librarySeeded,
+      libraryRevision: LIBRARY_REVISION
     };
     writeStorage(STORAGE_KEY, snapshot);
   }
@@ -198,7 +225,8 @@ class WorkspaceStore {
         title: skill.label,
         kind: skill.kind,
         content: skill.content,
-        tags: [...skill.tags]
+        tags: [...skill.tags],
+        sourceHash: hashText(skill.content)
       })
     );
 
@@ -207,6 +235,52 @@ class WorkspaceStore {
     this.librarySeeded = true;
     this.persist();
     return added.length;
+  }
+
+  /** Collapses duplicate SKILL.md docs, keeping the newest edit and merging tags/favorite. */
+  private dedupeSkillDocs(): number {
+    const matches = this.items.filter((item) => item.title === 'SKILL.md');
+    if (matches.length < 2) return 0;
+
+    const sorted = [...matches].sort(
+      (a, b) => b.updatedAt - a.updatedAt || b.content.length - a.content.length
+    );
+    const keeper = sorted[0];
+    const dropIds = new Set(sorted.slice(1).map((item) => item.id));
+    const merged: PromptItem = {
+      ...keeper,
+      favorite: matches.some((item) => item.favorite),
+      tags: [...new Set(matches.flatMap((item) => item.tags))]
+    };
+
+    this.items = this.items
+      .filter((item) => !dropIds.has(item.id))
+      .map((item) => (item.id === keeper.id ? merged : item));
+    if (this.selectedId !== null && dropIds.has(this.selectedId)) this.selectedId = keeper.id;
+    return dropIds.size;
+  }
+
+  /** Updates bundled docs when the bundle changes, but never overwrites user edits. */
+  private refreshLibrary(): number {
+    const skillById = new Map(SKILL_LIBRARY.map((skill) => [skill.id, skill]));
+    let refreshed = 0;
+
+    this.items = this.items.map((item) => {
+      const skill = skillById.get(item.id);
+      if (!skill || !isBundledDoc(item, skill) || item.content === skill.content) return item;
+      refreshed += 1;
+      return {
+        ...item,
+        title: skill.label,
+        kind: skill.kind,
+        content: skill.content,
+        tags: [...skill.tags],
+        sourceHash: hashText(skill.content),
+        updatedAt: Date.now()
+      };
+    });
+
+    return refreshed;
   }
 
   /** Opens a library skill as a document, reusing the existing one when present. */
@@ -222,7 +296,8 @@ class WorkspaceStore {
       title: template.label,
       kind: template.kind,
       content: template.content,
-      tags: [...template.tags]
+      tags: [...template.tags],
+      sourceHash: hashText(template.content)
     });
 
     this.items = [item, ...this.items];

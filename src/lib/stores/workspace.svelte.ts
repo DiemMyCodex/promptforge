@@ -1,3 +1,4 @@
+import { SKILL_LIBRARY } from '../skill-library';
 import { TEMPLATES } from '../templates';
 import type { EditorTab, PromptItem, PromptKind, TemplatePreset, ThemeMode } from '../types';
 
@@ -9,6 +10,7 @@ interface PersistedWorkspace {
   version: 1;
   items: PromptItem[];
   selectedId: string | null;
+  librarySeeded?: boolean;
 }
 
 function createId(): string {
@@ -57,14 +59,17 @@ function normalizeItem(value: PromptItem): PromptItem {
   };
 }
 
-function makeItem(partial: Pick<PromptItem, 'title' | 'kind' | 'content' | 'tags'>): PromptItem {
+function makeItem(
+  partial: Pick<PromptItem, 'title' | 'kind' | 'content' | 'tags'> & { id?: string }
+): PromptItem {
   const now = Date.now();
+  const { id, ...rest } = partial;
   return {
-    id: createId(),
+    id: id ?? createId(),
     favorite: false,
     createdAt: now,
     updatedAt: now,
-    ...partial
+    ...rest
   };
 }
 
@@ -87,6 +92,7 @@ class WorkspaceStore {
   theme = $state<ThemeMode>('dark');
   editorTab = $state<EditorTab>('editor');
   hydrated = $state(false);
+  private librarySeeded = false;
 
   active = $derived(this.items.find((item) => item.id === this.selectedId) ?? null);
 
@@ -125,8 +131,16 @@ class WorkspaceStore {
         persisted.selectedId && this.items.some((item) => item.id === persisted.selectedId)
           ? persisted.selectedId
           : (this.items[0]?.id ?? null);
+
+      if (persisted.librarySeeded === true) {
+        this.librarySeeded = true;
+      } else {
+        // One-time backfill: existing visitors get all bundled skills as documents.
+        this.ensureLibrary();
+      }
     } else {
       this.seed();
+      this.ensureLibrary();
     }
 
     const storedTheme = readStorage<ThemeMode>(THEME_KEY);
@@ -158,9 +172,65 @@ class WorkspaceStore {
     const snapshot: PersistedWorkspace = {
       version: 1,
       items: this.items,
-      selectedId: this.selectedId
+      selectedId: this.selectedId,
+      librarySeeded: this.librarySeeded
     };
     writeStorage(STORAGE_KEY, snapshot);
+  }
+
+  /**
+   * Merges every bundled skill that is missing from the workspace. Skill ids are
+   * stable (`lib-<name>`), so this is idempotent and never duplicates a skill.
+   */
+  ensureLibrary(): number {
+    const existing = new Set(this.items.map((item) => item.id));
+    const missing = SKILL_LIBRARY.filter((skill) => !existing.has(skill.id));
+
+    if (missing.length === 0) {
+      this.librarySeeded = true;
+      this.persist();
+      return 0;
+    }
+
+    const added = missing.map((skill) =>
+      makeItem({
+        id: skill.id,
+        title: skill.label,
+        kind: skill.kind,
+        content: skill.content,
+        tags: [...skill.tags]
+      })
+    );
+
+    this.items = [...added, ...this.items];
+    if (this.selectedId === null) this.selectedId = this.items[0]?.id ?? null;
+    this.librarySeeded = true;
+    this.persist();
+    return added.length;
+  }
+
+  /** Opens a library skill as a document, reusing the existing one when present. */
+  openLibrarySkill(template: TemplatePreset): void {
+    const existing = this.items.find((item) => item.id === template.id);
+    if (existing) {
+      this.select(existing.id);
+      return;
+    }
+
+    const item = makeItem({
+      id: template.id,
+      title: template.label,
+      kind: template.kind,
+      content: template.content,
+      tags: [...template.tags]
+    });
+
+    this.items = [item, ...this.items];
+    this.selectedId = item.id;
+    this.activeTag = null;
+    this.query = '';
+    this.editorTab = 'editor';
+    this.persist();
   }
 
   applyTheme(): void {

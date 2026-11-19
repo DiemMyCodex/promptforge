@@ -33,7 +33,7 @@
   }
 
   function choose(skill: TemplatePreset): void {
-    workspace.createFromTemplate(skill);
+    workspace.openLibrarySkill(skill);
     query = '';
     onClose?.();
   }

@@ -168,7 +168,7 @@ class WorkspaceStore {
     document.documentElement.dataset.theme = this.theme;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', this.theme === 'dark' ? '#0a0c11' : '#f5f6f9');
+      ?.setAttribute('content', this.theme === 'dark' ? '#08090d' : '#eceef3');
   }
 
   setTheme(theme: ThemeMode): void {

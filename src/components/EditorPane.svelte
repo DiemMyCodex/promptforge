@@ -151,40 +151,51 @@
     addTag();
   }
 
-  let status = $derived(!report.present ? 'PLAIN MD' : report.valid ? 'FRONTMATTER OK' : `${report.errors.length} ISSUE${report.errors.length === 1 ? '' : 'S'}`);
+  let status = $derived(
+    !report.present
+      ? 'PLAIN MD'
+      : report.valid
+        ? 'FRONTMATTER OK'
+        : `${report.errors.length} ISSUE${report.errors.length === 1 ? '' : 'S'}`
+  );
 </script>
 
-<div class="flex h-full min-h-0 w-full flex-col bg-panel">
+<div class="flex h-full min-h-0 w-full flex-col">
   {#if !item}
     <div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <span class="mono text-[11px] uppercase tracking-widest text-faint">No document open</span>
-      <p class="mt-2 max-w-xs text-xs leading-relaxed text-faint">
+      <div
+        class="grid size-12 place-items-center rounded-[14px] border border-separator bg-fill text-label-3"
+      >
+        <Plus size={20} />
+      </div>
+      <p class="mt-3 text-[13px] font-medium text-label">No document open</p>
+      <p class="mt-1 max-w-xs text-[11px] leading-relaxed text-label-3">
         Pick one from the library or create a blank file.
       </p>
       <button
         type="button"
-        class="mt-4 flex h-11 items-center gap-2 rounded-md bg-accent px-4 text-[12px] font-semibold text-accent-ink transition-colors hover:brightness-95"
+        class="ios-btn ios-primary tap mt-4"
         onclick={() => workspace.createBlank()}
       >
         <Plus size={15} /> New document
       </button>
     </div>
   {:else}
-    <div class="flex h-11 shrink-0 items-center gap-2 border-b border-line px-2 sm:px-3">
-      <span class="micro hidden shrink-0 text-faint sm:block">File</span>
+    <div class="flex h-[52px] shrink-0 items-center gap-2 border-b border-separator px-3">
+      <span class="micro hidden sm:block">File</span>
       <input
         value={item.title}
         oninput={handleTitleInput}
         aria-label="Document title"
         spellcheck="false"
-        class="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-faint"
+        class="min-w-0 flex-1 bg-transparent text-[14px] font-medium tracking-[-0.01em] text-label outline-none placeholder:text-label-3"
         placeholder="Untitled"
       />
       <select
         value={item.kind}
         onchange={handleKindChange}
         aria-label="Document kind"
-        class="mono h-7 shrink-0 rounded border border-line bg-surface px-1.5 text-[10px] uppercase tracking-wider text-muted outline-none hover:border-line-strong"
+        class="mono h-7 shrink-0 rounded-full border border-separator bg-fill px-2.5 text-[10px] uppercase tracking-wide text-label-2 outline-none hover:border-accent/50"
       >
         {#each KINDS as kind (kind)}
           <option value={kind}>{kind}</option>
@@ -192,7 +203,7 @@
       </select>
       <button
         type="button"
-        class="grid size-11 shrink-0 place-items-center rounded text-faint transition-colors hover:bg-raised hover:text-warn"
+        class="row-icon"
         aria-label={item.favorite ? 'Remove from favorites' : 'Add to favorites'}
         onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
       >
@@ -200,7 +211,7 @@
       </button>
       <button
         type="button"
-        class="grid size-11 shrink-0 place-items-center rounded text-faint transition-colors hover:bg-raised hover:text-bad"
+        class="row-icon"
         aria-label="Delete document"
         onclick={() => {
           if (window.confirm(`Delete "${item.title}"? This cannot be undone.`)) {
@@ -212,13 +223,13 @@
       </button>
     </div>
 
-    <div class="pf-scroll flex h-9 shrink-0 items-center overflow-x-auto border-b border-line px-2">
-      <span class="micro mr-2 shrink-0 text-faint">Insert</span>
+    <div class="scroll-thin flex h-9 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-separator px-3">
+      <span class="micro mr-1 shrink-0">Insert</span>
       {#each SNIPPETS as snippet (snippet.label)}
         <button
           type="button"
           title={snippet.title}
-          class="mono h-8 shrink-0 border-r border-line px-2.5 text-[10px] uppercase tracking-wider text-muted transition-colors hover:bg-raised hover:text-ink"
+          class="mono h-7 shrink-0 rounded-[8px] border border-separator bg-fill px-2.5 text-[10px] uppercase tracking-wide text-label-2 transition-colors hover:bg-fill-hover hover:text-label"
           onclick={() => insertSnippet(snippet.value)}
         >
           {snippet.label}
@@ -230,10 +241,10 @@
       <div
         bind:this={gutter}
         aria-hidden="true"
-        class="no-scrollbar w-11 shrink-0 overflow-hidden border-r border-line bg-surface pt-4 text-right font-mono text-[12px] leading-6 text-faint select-none"
+        class="no-scrollbar w-10 shrink-0 overflow-hidden border-r border-separator bg-fill/40 pt-4 text-right font-mono text-[12px] leading-6 text-label-3 select-none"
       >
         {#each lineNumbers as line (line)}
-          <div class="tabular pr-2">{line}</div>
+          <div class="tabular pr-2.5">{line}</div>
         {/each}
       </div>
       <textarea
@@ -248,19 +259,19 @@
         spellcheck="false"
         aria-label="Document editor"
         placeholder="Write Markdown here…"
-        class="pf-scroll h-full min-w-0 flex-1 resize-none bg-transparent px-3 py-4 font-mono text-[13px] leading-6 text-ink outline-none placeholder:text-faint"
+        class="scroll-thin h-full min-w-0 flex-1 resize-none bg-transparent px-3 py-4 font-mono text-[13px] leading-6 tracking-[-0.01em] text-label outline-none placeholder:text-label-3"
       ></textarea>
     </div>
 
-    <div class="pf-scroll flex shrink-0 items-center gap-2 overflow-x-auto border-t border-line px-3 py-1.5">
+    <div class="scroll-thin flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-separator px-3 py-2">
       {#each item.tags as tag (tag)}
         <span
-          class="mono inline-flex h-6 shrink-0 items-center gap-1 rounded-sm border border-line bg-surface pl-2 pr-1 text-[10px] text-muted"
+          class="mono inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-separator bg-fill pl-2.5 pr-1 text-[10px] text-label-2"
         >
           #{tag}
           <button
             type="button"
-            class="grid size-5 place-items-center rounded-sm text-faint transition-colors hover:text-bad"
+            class="row-icon !size-6"
             aria-label={`Remove tag ${tag}`}
             onclick={() =>
               workspace.updateItem(item.id, {
@@ -278,18 +289,20 @@
         maxlength="32"
         aria-label="Add a tag"
         placeholder="+ tag"
-        class="mono h-7 w-20 shrink-0 bg-transparent text-[10px] text-ink outline-none placeholder:text-faint focus:w-28"
+        class="mono h-7 w-20 shrink-0 bg-transparent text-[10px] text-label outline-none placeholder:text-label-3 focus:w-28"
       />
     </div>
 
     <div
-      class="flex h-7 shrink-0 items-center gap-3 border-t border-line bg-surface px-3 mono text-[10px] text-faint"
+      class="flex h-7 shrink-0 items-center gap-2 bg-fill/50 px-3 mono text-[10px] text-label-3"
     >
       <span class="tabular">Ln {cursor.line}, Col {cursor.col}</span>
       {#if cursor.selected > 0}
         <span class="tabular hidden sm:inline">({cursor.selected} sel)</span>
       {/if}
-      <span class="tabular ml-auto hidden sm:inline">{metrics.tokens} tk · {metrics.words} wd · {metrics.lines} ln</span>
+      <span class="tabular ml-auto hidden sm:inline">
+        {metrics.tokens} tk · {metrics.words} wd · {metrics.lines} ln
+      </span>
       <span class="tabular">{metrics.chars} ch</span>
       <span class={report.present && !report.valid ? 'text-bad' : 'text-good'}>{status}</span>
     </div>

@@ -64,6 +64,7 @@
     const typing =
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
       target?.isContentEditable === true;
 
     if (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey) {
@@ -111,47 +112,53 @@
   {/if}
 {/snippet}
 
-<div class="flex h-full min-h-0 flex-col bg-surface">
-  <div class="shrink-0 border-b border-line p-2.5">
+<div class="flex h-full min-h-0 flex-col">
+  <div class="shrink-0 space-y-2.5 px-3 pt-3">
     <div class="relative">
-      <Search size={14} class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
+      <Search
+        size={15}
+        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-label-3"
+      />
       <input
         bind:this={searchEl}
         bind:value={searchInput}
         type="search"
-        placeholder="Filter documents"
+        placeholder="Search documents"
         aria-label="Search saved prompts"
-        class="mono h-11 w-full rounded-md border border-line bg-canvas pl-8 pr-10 text-[12px] text-ink outline-none transition-colors placeholder:text-faint hover:border-line-strong focus:border-accent"
+        class="ios-input w-full pl-9 pr-11 text-[12px]"
       />
       {#if searchInput}
         <button
           type="button"
-          class="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-md text-faint transition-colors hover:text-ink"
+          class="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-label-3 transition-colors hover:text-label"
           aria-label="Clear search"
           onclick={() => (searchInput = '')}
         >
-          <X size={13} />
+          <X size={14} />
         </button>
       {:else}
-        <span class="kbd pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">/</span>
+        <span class="kbd pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">/</span>
       {/if}
     </div>
 
-    <div class="relative mt-2" bind:this={menuRoot}>
+    <div class="relative" bind:this={menuRoot}>
       <button
         type="button"
-        class="flex h-11 w-full items-center gap-2 rounded-md bg-accent px-3 text-left text-[12px] font-semibold text-accent-ink transition-colors hover:brightness-95"
+        class="ios-btn ios-primary tap w-full justify-start"
         aria-expanded={menuOpen}
         onclick={() => (menuOpen = !menuOpen)}
       >
-        <Plus size={15} />
-        <span class="mono uppercase tracking-wider">New document</span>
-        <ChevronDown size={14} class={`ml-auto transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+        <Plus size={16} />
+        <span>New document</span>
+        <ChevronDown
+          size={14}
+          class={`ml-auto opacity-80 transition-[rotate] duration-[260ms] ${menuOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {#if menuOpen}
         <div
-          class="pf-enter absolute inset-x-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-md border border-line-strong bg-panel p-1"
+          class="pf-enter glass absolute inset-x-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[14px] p-1.5"
           role="menu"
           aria-label="Starter templates"
         >
@@ -159,15 +166,19 @@
             <button
               type="button"
               role="menuitem"
-              class="flex w-full items-start gap-2.5 rounded px-2 py-2 text-left transition-colors hover:bg-raised"
+              class="flex w-full items-start gap-2.5 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-fill-hover"
               onclick={() => chooseTemplate(template)}
             >
-              <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded border border-line text-accent">
+              <span
+                class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-[8px] border border-separator bg-fill text-accent"
+              >
                 {@render templateIcon(template.id)}
               </span>
               <span class="min-w-0">
-                <span class="mono block text-[11px] font-semibold text-ink">{template.label}</span>
-                <span class="mt-0.5 block text-[11px] leading-snug text-faint">{template.summary}</span>
+                <span class="block text-[12px] font-medium text-label">{template.label}</span>
+                <span class="mt-0.5 block text-[11px] leading-snug text-label-3">
+                  {template.summary}
+                </span>
               </span>
             </button>
           {/each}
@@ -176,16 +187,18 @@
     </div>
   </div>
 
-  <div class="flex items-center justify-between px-3 pb-1.5 pt-3">
-    <span class="micro text-faint">Documents</span>
-    <span class="mono tabular text-[10px] text-faint">{workspace.filtered.length}/{workspace.items.length}</span>
+  <div class="flex items-center justify-between px-4 pb-1.5 pt-4">
+    <span class="micro">Library</span>
+    <span class="mono tabular text-[10px] text-label-3">
+      {workspace.filtered.length}/{workspace.items.length}
+    </span>
   </div>
 
-  <div class="pf-scroll flex shrink-0 items-center gap-3 overflow-x-auto border-b border-line px-3 py-2">
+  <div class="scroll-thin flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2.5">
     <button
       type="button"
       aria-pressed={workspace.activeTag === null}
-      class={`mono shrink-0 text-[10px] uppercase tracking-wider ${workspace.activeTag === null ? 'text-accent' : 'text-faint hover:text-muted'}`}
+      class={`mono h-7 shrink-0 rounded-full border px-2.5 text-[10px] transition-colors ${workspace.activeTag === null ? 'border-accent/40 bg-accent-soft text-accent' : 'border-separator text-label-3 hover:text-label-2'}`}
       onclick={() => workspace.setTag(null)}
     >
       All
@@ -194,7 +207,7 @@
       <button
         type="button"
         aria-pressed={workspace.activeTag === tag}
-        class={`mono shrink-0 text-[10px] uppercase tracking-wider ${workspace.activeTag === tag ? 'text-accent' : 'text-faint hover:text-muted'}`}
+        class={`mono h-7 shrink-0 rounded-full border px-2.5 text-[10px] transition-colors ${workspace.activeTag === tag ? 'border-accent/40 bg-accent-soft text-accent' : 'border-separator text-label-3 hover:text-label-2'}`}
         onclick={() => workspace.setTag(workspace.activeTag === tag ? null : tag)}
       >
         #{tag}
@@ -202,39 +215,46 @@
     {/each}
   </div>
 
-  <div class="pf-scroll min-h-0 flex-1 overflow-y-auto">
+  <div class="scroll-thin min-h-0 flex-1 overflow-y-auto px-2 pb-2">
     {#if workspace.filtered.length === 0}
       <div class="flex h-full flex-col items-center justify-center px-5 text-center">
-        <FolderOpen size={20} class="text-faint" />
-        <p class="mono mt-3 text-[11px] uppercase tracking-wider text-muted">No matches</p>
-        <p class="mt-1.5 text-[11px] leading-relaxed text-faint">
-          Clear the filter or create a document from a template.
+        <div
+          class="grid size-11 place-items-center rounded-[13px] border border-separator bg-fill text-label-3"
+        >
+          <FolderOpen size={19} />
+        </div>
+        <p class="mt-3 text-[12px] font-medium text-label-2">No matches</p>
+        <p class="mt-1 text-[11px] leading-relaxed text-label-3">
+          Clear the filter or start from a template.
         </p>
       </div>
     {:else}
-      <ul>
+      <ul class="space-y-0.5">
         {#each workspace.filtered as item (item.id)}
-          <li
-            class={`group relative border-b border-line/60 transition-colors ${item.id === workspace.selectedId ? 'bg-raised' : 'hover:bg-panel'}`}
-          >
-            {#if item.id === workspace.selectedId}
-              <span class="absolute inset-y-0 left-0 w-0.5 bg-accent"></span>
-            {/if}
-            <div class="flex items-center gap-1 pl-3 pr-1">
+          {@const selected = item.id === workspace.selectedId}
+          <li class="group relative">
+            <div
+              class={`flex items-center gap-1 rounded-[12px] border px-2 py-1.5 transition-colors ${selected ? 'border-separator bg-fill' : 'border-transparent hover:bg-fill'}`}
+            >
+              {#if selected}
+                <span class="absolute inset-y-2.5 left-0 w-[3px] rounded-full bg-accent"></span>
+              {/if}
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-2.5 py-2.5 text-left"
-                aria-current={item.id === workspace.selectedId ? 'true' : undefined}
+                class="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
+                aria-current={selected ? 'true' : undefined}
                 onclick={() => selectItem(item.id)}
               >
                 <span
-                  class={`mono w-5 shrink-0 text-[10px] ${item.id === workspace.selectedId ? 'text-accent' : 'text-faint'}`}
+                  class={`mono grid size-8 shrink-0 place-items-center rounded-[9px] border text-[10px] font-semibold ${selected ? 'border-accent/40 bg-accent-soft text-accent' : 'border-separator bg-fill text-label-3'}`}
                 >
                   {KIND_CODE[item.kind]}
                 </span>
                 <span class="min-w-0 flex-1">
-                  <span class="block truncate text-[13px] font-medium text-ink">{item.title}</span>
-                  <span class="mono mt-0.5 block truncate text-[10px] text-faint">
+                  <span class="block truncate text-[12.5px] font-medium text-label">
+                    {item.title}
+                  </span>
+                  <span class="mono mt-0.5 block truncate text-[10px] text-label-3">
                     {relativeTime(item.updatedAt)}{item.tags.length
                       ? ` · ${item.tags.map((tag) => `#${tag}`).join(' ')}`
                       : ''}
@@ -247,7 +267,7 @@
               >
                 <button
                   type="button"
-                  class="grid size-11 place-items-center rounded text-faint transition-colors hover:bg-surface hover:text-warn"
+                  class="row-icon"
                   aria-label={item.favorite ? `Unfavorite ${item.title}` : `Favorite ${item.title}`}
                   onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
                 >
@@ -255,7 +275,7 @@
                 </button>
                 <button
                   type="button"
-                  class="grid size-11 place-items-center rounded text-faint transition-colors hover:bg-surface hover:text-bad"
+                  class="row-icon"
                   aria-label={`Delete ${item.title}`}
                   onclick={() => removeItem(item.id, item.title)}
                 >
@@ -270,10 +290,12 @@
   </div>
 
   <div
-    class="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2 mono text-[10px] text-faint"
+    class="flex shrink-0 items-center gap-2 border-t border-separator px-4 py-2.5"
   >
     <span class="dot text-good"></span>
-    <span>Local storage</span>
-    <span class="tabular ml-auto">{workspace.items.length} doc</span>
+    <span class="mono text-[10px] text-label-3">Stored locally</span>
+    <span class="mono tabular ml-auto text-[10px] text-label-3">
+      {workspace.items.length} docs
+    </span>
   </div>
 </div>

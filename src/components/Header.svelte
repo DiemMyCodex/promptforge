@@ -1,5 +1,6 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check';
+  import Command from '@lucide/svelte/icons/command';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import GitBranch from '@lucide/svelte/icons/git-branch';
   import Moon from '@lucide/svelte/icons/moon';
@@ -49,42 +50,49 @@
   }
 </script>
 
-<header
-  class="relative z-50 flex h-[52px] shrink-0 items-center gap-2 border-b border-line bg-surface px-2 sm:px-3"
->
+<header class="glass flex h-14 shrink-0 items-center gap-2 rounded-[18px] px-2 sm:px-3">
   <button
     type="button"
-    class="grid size-11 place-items-center rounded-md text-muted transition-colors hover:bg-raised hover:text-ink lg:hidden"
-    aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+    class="ios-icon tap lg:hidden"
+    aria-label={sidebarOpen ? 'Close library' : 'Open library'}
     onclick={() => (sidebarOpen = !sidebarOpen)}
   >
     <PanelLeft size={17} />
   </button>
 
   <div class="flex min-w-0 items-center gap-2.5">
-    <div class="grid size-7 shrink-0 place-items-center rounded-[4px] border border-accent/50 text-accent">
-      <span class="pf-mark">PF</span>
+    <div
+      class="grid size-8 shrink-0 place-items-center rounded-[9px] border border-accent/30 bg-accent-soft text-accent"
+    >
+      <Command size={16} strokeWidth={2.2} />
     </div>
-    <span class="mono text-[12px] font-semibold tracking-[0.08em]">PROMPTFORGE</span>
-    <span class="mx-1 hidden h-3 w-px bg-line-strong md:block"></span>
-    <span class="micro hidden truncate text-faint md:block">~/workspace</span>
+    <div class="min-w-0">
+      <div class="text-[13px] font-semibold leading-tight tracking-[-0.02em]">PromptForge</div>
+      <div class="micro hidden leading-tight sm:block">Local studio</div>
+    </div>
     {#if item}
-      <span class="mono hidden max-w-48 truncate text-[11px] text-muted lg:block">/ {item.title}</span>
+      <span class="mx-1 hidden h-4 w-px bg-separator md:block"></span>
+      <span class="mono hidden max-w-[16rem] truncate text-[11px] text-label-2 md:block">
+        {item.title}
+      </span>
     {/if}
   </div>
 
-  <div class="ml-auto flex items-center gap-1">
+  <div class="ml-auto flex items-center gap-1.5">
     {#if flash}
-      <span class="mono hidden items-center gap-1.5 text-[10px] text-good sm:flex" role="status">
-        <Check size={12} /> {flash}
+      <span class="hidden items-center gap-1.5 text-[11px] text-good sm:flex" role="status">
+        <Check size={13} /> {flash}
       </span>
     {/if}
     {#if error}
-      <span class="mono hidden text-[10px] text-bad sm:block" role="alert">{error}</span>
+      <span class="hidden text-[11px] text-bad sm:block" role="alert">{error}</span>
     {/if}
 
-    <span class="micro hidden items-center gap-1.5 border border-line px-2 py-1.5 text-muted sm:flex">
-      <span class="dot text-good"></span> Local
+    <span
+      class="hidden items-center gap-1.5 rounded-full border border-separator bg-fill px-2.5 py-1.5 sm:flex"
+    >
+      <span class="dot text-good"></span>
+      <span class="micro">Local</span>
     </span>
 
     <input
@@ -98,17 +106,17 @@
 
     <button
       type="button"
-      class="flex h-11 items-center gap-1.5 rounded-md border border-line px-2.5 text-muted transition-colors hover:border-line-strong hover:text-ink"
+      class="ios-btn tap"
       aria-label="Import Markdown file"
       onclick={() => fileInput?.click()}
     >
       <Upload size={15} />
-      <span class="micro hidden sm:inline">Import</span>
+      <span class="hidden sm:inline">Import</span>
     </button>
 
     <button
       type="button"
-      class="grid size-11 place-items-center rounded-md border border-line text-muted transition-colors hover:border-line-strong hover:text-ink"
+      class="ios-icon tap"
       aria-label={workspace.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       title={workspace.theme === 'dark' ? 'Light theme' : 'Dark theme'}
       onclick={() => workspace.toggleTheme()}
@@ -124,12 +132,12 @@
       href={GITHUB_URL}
       target="_blank"
       rel="noopener noreferrer"
-      class="flex h-11 items-center gap-1.5 rounded-md border border-line px-2.5 text-muted transition-colors hover:border-line-strong hover:text-ink"
+      class="ios-btn tap hidden sm:inline-flex"
       aria-label="Open the project repository"
       title="Open the PromptForge repository"
     >
       <GitBranch size={15} />
-      <span class="micro hidden lg:inline">Source</span>
+      <span class="hidden lg:inline">Source</span>
       <ExternalLink size={11} class="hidden lg:block" />
     </a>
   </div>

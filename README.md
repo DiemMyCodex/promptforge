@@ -20,7 +20,9 @@ No backend. No database. No account. No API keys. Nothing leaves your device.
 - **Agent-focused editor** — tab/Shift+Tab indentation, one-click snippet insertion, tag management, live token/word/line/character/byte counts.
 - **Safe live preview** — all HTML metacharacters are escaped before rendering, link targets are scheme-checked, and frontmatter is validated with inline diagnostics.
 - **Import / export** — drop in any `.md`, `.markdown` or `.txt`; copy to clipboard or download a clean `.md`.
-- **Developer-tool UI** — zinc/slate dark default, light theme, crisp borders, split panes on desktop, tabbed Editor/Preview at 375px, 44px tap targets, WCAG AA contrast and reduced-motion support.
+- **Liquid-glass UI** — layered frosted panels, continuous corners, ambient depth and a single accent, dark/light themes, split panes on desktop, iOS-style segmented Editor/Preview control on mobile, 44px tap targets, WCAG AA contrast and reduced-motion support.
+- **Typographic system** — self-hosted Geist + Geist Mono (SIL OFL), no font CDN or runtime network calls.
+- **Real shortcuts** — `/` focuses search, `⌘/Ctrl+S` exports the `.md`, `Tab`/`Shift+Tab` indents the selection, `Esc` closes menus.
 
 ## Quick start
 
@@ -63,11 +65,13 @@ promptforge/
 │   │   ├── templates.ts                # built-in starter documents
 │   │   ├── types.ts                    # strict domain interfaces
 │   │   └── utils/
+│   │       ├── download.ts             # .md export helper
 │   │       ├── markdown.ts             # escape-first renderer
 │   │       └── tokens.ts               # token estimator + frontmatter validator
 │   ├── App.svelte
-│   ├── app.css                    # Tailwind v4 @import + @theme tokens
+│   ├── app.css                    # Tailwind v4 @theme + glass design system
 │   └── main.ts
+├── public/fonts/                  # self-hosted Geist / Geist Mono + OFL license
 ├── vercel.json                    # static dist output + SPA fallback
 └── README.md
 ```

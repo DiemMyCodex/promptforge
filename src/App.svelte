@@ -62,7 +62,7 @@
             class={`relative z-10 flex h-10 items-center justify-center gap-1.5 rounded-lg text-[12px] font-medium transition-colors ${workspace.editorTab === 'editor' ? 'text-label' : 'text-label-2'}`}
             onclick={() => workspace.setEditorTab('editor')}
           >
-            <CodeXml size={14} /> Editor
+            <CodeXml size={14} /> Source
           </button>
           <button
             type="button"
@@ -79,7 +79,7 @@
       <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
         <section
           class={`min-h-0 min-w-0 ${workspace.editorTab === 'editor' ? 'block' : 'hidden'} lg:block lg:border-r lg:border-separator`}
-          aria-label="Editor"
+          aria-label="Source"
         >
           <EditorPane />
         </section>

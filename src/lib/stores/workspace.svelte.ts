@@ -331,69 +331,6 @@ class WorkspaceStore {
     this.persist();
   }
 
-  createBlank(): string {
-    const item = makeItem({
-      title: 'Untitled prompt',
-      kind: 'snippet',
-      content: '',
-      tags: []
-    });
-    this.items = [item, ...this.items];
-    this.selectedId = item.id;
-    this.activeTag = null;
-    this.query = '';
-    this.editorTab = 'editor';
-    this.persist();
-    return item.id;
-  }
-
-  createFromTemplate(template: TemplatePreset): string {
-    const item = makeItem({
-      title: template.label,
-      kind: template.kind,
-      content: template.content,
-      tags: [...template.tags]
-    });
-    this.items = [item, ...this.items];
-    this.dedupeSkillDocs();
-    this.selectedId = item.id;
-    this.activeTag = null;
-    this.query = '';
-    this.editorTab = 'editor';
-    this.persist();
-    return item.id;
-  }
-
-  updateItem(
-    id: string,
-    patch: Partial<Pick<PromptItem, 'title' | 'content' | 'tags' | 'favorite' | 'kind'>>
-  ): void {
-    const index = this.items.findIndex((item) => item.id === id);
-    if (index === -1) return;
-
-    this.items[index] = {
-      ...this.items[index],
-      ...patch,
-      updatedAt: Date.now()
-    };
-    this.persist();
-  }
-
-  duplicateItem(id: string): void {
-    const source = this.items.find((item) => item.id === id);
-    if (!source) return;
-
-    const copy = makeItem({
-      title: `${source.title} copy`,
-      kind: source.kind,
-      content: source.content,
-      tags: [...source.tags]
-    });
-    this.items = [copy, ...this.items];
-    this.selectedId = copy.id;
-    this.persist();
-  }
-
 }
 
 export const workspace = new WorkspaceStore();

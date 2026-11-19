@@ -1,17 +1,12 @@
 <script lang="ts">
   import Braces from '@lucide/svelte/icons/braces';
-  import ChevronDown from '@lucide/svelte/icons/chevron-down';
-  import FileText from '@lucide/svelte/icons/file-text';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
-  import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
   import Star from '@lucide/svelte/icons/star';
-  import Terminal from '@lucide/svelte/icons/terminal';
   import X from '@lucide/svelte/icons/x';
   import { SKILL_LIBRARY } from '../lib/skill-library';
   import { workspace } from '../lib/stores/workspace.svelte';
-  import { TEMPLATES } from '../lib/templates';
-  import type { PromptKind, TemplatePreset } from '../lib/types';
+  import type { PromptKind } from '../lib/types';
 
   interface Props {
     onNavigate?: () => void;
@@ -21,9 +16,7 @@
   let { onNavigate, onOpenLibrary }: Props = $props();
 
   let searchInput = $state(workspace.query);
-  let menuOpen = $state(false);
   let searchEl = $state<HTMLInputElement | null>(null);
-  let menuRoot = $state<HTMLDivElement | null>(null);
 
   const KIND_CODE: Record<PromptKind, string> = {
     skill: 'SK',
@@ -40,24 +33,6 @@
 
   $effect(() => {
     if (workspace.query === '' && searchInput !== '') searchInput = '';
-  });
-
-  $effect(() => {
-    if (!menuOpen) return;
-
-    const closeOnOutside = (event: PointerEvent): void => {
-      if (menuRoot && !menuRoot.contains(event.target as Node)) menuOpen = false;
-    };
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') menuOpen = false;
-    };
-
-    window.addEventListener('pointerdown', closeOnOutside);
-    window.addEventListener('keydown', closeOnEscape);
-    return () => {
-      window.removeEventListener('pointerdown', closeOnOutside);
-      window.removeEventListener('keydown', closeOnEscape);
-    };
   });
 
   function handleShortcut(event: KeyboardEvent): void {
@@ -85,12 +60,6 @@
     return new Date(timestamp).toLocaleDateString();
   }
 
-  function chooseTemplate(template: TemplatePreset): void {
-    workspace.createFromTemplate(template);
-    menuOpen = false;
-    onNavigate?.();
-  }
-
   function selectItem(id: string): void {
     workspace.select(id);
     onNavigate?.();
@@ -99,16 +68,6 @@
 </script>
 
 <svelte:window onkeydown={handleShortcut} />
-
-{#snippet templateIcon(id: string)}
-  {#if id === 'skill'}
-    <Braces size={14} />
-  {:else if id === 'agents'}
-    <Terminal size={14} />
-  {:else}
-    <FileText size={14} />
-  {/if}
-{/snippet}
 
 <div class="flex h-full min-h-0 flex-col">
   <div class="shrink-0 space-y-2.5 px-3 pt-3">
@@ -136,51 +95,6 @@
         </button>
       {:else}
         <span class="kbd pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">/</span>
-      {/if}
-    </div>
-
-    <div class="relative" bind:this={menuRoot}>
-      <button
-        type="button"
-        class="ios-btn ios-primary tap w-full justify-start"
-        aria-expanded={menuOpen}
-        onclick={() => (menuOpen = !menuOpen)}
-      >
-        <Plus size={16} />
-        <span>New document</span>
-        <ChevronDown
-          size={14}
-          class={`ml-auto opacity-80 transition-[rotate] duration-[260ms] ${menuOpen ? 'rotate-180' : ''}`}
-        />
-      </button>
-
-      {#if menuOpen}
-        <div
-          class="pf-enter glass absolute inset-x-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[14px] p-1.5"
-          role="menu"
-          aria-label="Starter templates"
-        >
-          {#each TEMPLATES as template (template.id)}
-            <button
-              type="button"
-              role="menuitem"
-              class="flex w-full items-start gap-2.5 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-fill-hover"
-              onclick={() => chooseTemplate(template)}
-            >
-              <span
-                class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-[8px] border border-separator bg-fill text-accent"
-              >
-                {@render templateIcon(template.id)}
-              </span>
-              <span class="min-w-0">
-                <span class="block text-[12px] font-medium text-label">{template.label}</span>
-                <span class="mt-0.5 block text-[11px] leading-snug text-label-3">
-                  {template.summary}
-                </span>
-              </span>
-            </button>
-          {/each}
-        </div>
       {/if}
     </div>
 
@@ -233,7 +147,7 @@
         </div>
         <p class="mt-3 text-[12px] font-medium text-label-2">No matches</p>
         <p class="mt-1 text-[11px] leading-relaxed text-label-3">
-          Clear the filter or start from a template.
+          Clear the filter or open a doc from the library.
         </p>
       </div>
     {:else}
@@ -270,18 +184,11 @@
                 </span>
               </button>
 
-              <div
-                class="flex shrink-0 items-center opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
-              >
-                <button
-                  type="button"
-                  class="row-icon"
-                  aria-label={item.favorite ? `Unfavorite ${item.title}` : `Favorite ${item.title}`}
-                  onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
-                >
-                  <Star size={14} class={item.favorite ? 'fill-warn text-warn' : ''} />
-                </button>
-              </div>
+              {#if item.favorite}
+                <span class="grid size-7 shrink-0 place-items-center text-warn" title="Favorite">
+                  <Star size={14} class="fill-warn" aria-hidden="true" />
+                </span>
+              {/if}
             </div>
           </li>
         {/each}

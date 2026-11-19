@@ -1,12 +1,10 @@
 <script lang="ts">
-  import BookOpen from '@lucide/svelte/icons/book-open';
   import Braces from '@lucide/svelte/icons/braces';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import FileText from '@lucide/svelte/icons/file-text';
   import FolderOpen from '@lucide/svelte/icons/folder-open';
   import Plus from '@lucide/svelte/icons/plus';
   import Search from '@lucide/svelte/icons/search';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
   import Star from '@lucide/svelte/icons/star';
   import Terminal from '@lucide/svelte/icons/terminal';
   import Trash from '@lucide/svelte/icons/trash';
@@ -23,22 +21,15 @@
 
   let searchInput = $state(workspace.query);
   let menuOpen = $state(false);
+  let searchEl = $state<HTMLInputElement | null>(null);
   let menuRoot = $state<HTMLDivElement | null>(null);
 
-  const KIND_LABEL: Record<PromptKind, string> = {
-    skill: 'skill',
-    agents: 'agents',
-    master: 'master',
-    provider: 'config',
-    snippet: 'note'
-  };
-
-  const KIND_CLASS: Record<PromptKind, string> = {
-    skill: 'bg-accent-soft text-accent-2',
-    agents: 'bg-good/12 text-good',
-    master: 'bg-warn/12 text-warn',
-    provider: 'bg-accent/12 text-accent',
-    snippet: 'bg-raised text-muted'
+  const KIND_CODE: Record<PromptKind, string> = {
+    skill: 'SK',
+    agents: 'AG',
+    master: 'MP',
+    provider: 'CF',
+    snippet: '··'
   };
 
   $effect(() => {
@@ -68,14 +59,27 @@
     };
   });
 
+  function handleShortcut(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    const typing =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target?.isContentEditable === true;
+
+    if (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault();
+      searchEl?.focus();
+    }
+  }
+
   function relativeTime(timestamp: number): string {
     const minutes = Math.floor((Date.now() - timestamp) / 60_000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 1) return 'now';
+    if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return `${hours}h`;
     const days = Math.floor(hours / 24);
-    if (days < 30) return `${days}d ago`;
+    if (days < 30) return `${days}d`;
     return new Date(timestamp).toLocaleDateString();
   }
 
@@ -95,36 +99,29 @@
   }
 </script>
 
-{#snippet kindBadge(kind: PromptKind)}
-  <span
-    class={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] ${KIND_CLASS[kind]}`}
-  >
-    {KIND_LABEL[kind]}
-  </span>
-{/snippet}
+<svelte:window onkeydown={handleShortcut} />
 
 {#snippet templateIcon(id: string)}
   {#if id === 'skill'}
-    <Braces size={15} />
+    <Braces size={14} />
   {:else if id === 'agents'}
-    <Terminal size={15} />
-  {:else if id === 'master'}
-    <Sparkles size={15} />
+    <Terminal size={14} />
   {:else}
-    <FileText size={15} />
+    <FileText size={14} />
   {/if}
 {/snippet}
 
 <div class="flex h-full min-h-0 flex-col bg-surface">
-  <div class="shrink-0 border-b border-line p-3">
+  <div class="shrink-0 border-b border-line p-2.5">
     <div class="relative">
-      <Search size={15} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+      <Search size={14} class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
       <input
+        bind:this={searchEl}
         bind:value={searchInput}
         type="search"
-        placeholder="Search prompts, tags, text…"
+        placeholder="Filter documents"
         aria-label="Search saved prompts"
-        class="h-11 w-full rounded-lg border border-line bg-canvas pl-9 pr-10 text-[13px] text-ink outline-none transition-colors placeholder:text-faint hover:border-muted/50 focus:border-accent"
+        class="mono h-11 w-full rounded-md border border-line bg-canvas pl-8 pr-10 text-[12px] text-ink outline-none transition-colors placeholder:text-faint hover:border-line-strong focus:border-accent"
       />
       {#if searchInput}
         <button
@@ -133,26 +130,28 @@
           aria-label="Clear search"
           onclick={() => (searchInput = '')}
         >
-          <X size={14} />
+          <X size={13} />
         </button>
+      {:else}
+        <span class="kbd pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">/</span>
       {/if}
     </div>
 
-    <div class="relative mt-2.5" bind:this={menuRoot}>
+    <div class="relative mt-2" bind:this={menuRoot}>
       <button
         type="button"
-        class="flex h-11 w-full items-center gap-2 rounded-lg border border-accent/35 bg-accent-soft/60 px-3 text-[13px] font-semibold text-accent transition-colors hover:border-accent"
+        class="flex h-11 w-full items-center gap-2 rounded-md bg-accent px-3 text-left text-[12px] font-semibold text-accent-ink transition-colors hover:brightness-95"
         aria-expanded={menuOpen}
         onclick={() => (menuOpen = !menuOpen)}
       >
-        <Plus size={16} />
-        New from template
+        <Plus size={15} />
+        <span class="mono uppercase tracking-wider">New document</span>
         <ChevronDown size={14} class={`ml-auto transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {#if menuOpen}
         <div
-          class="pf-enter absolute inset-x-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/30"
+          class="pf-enter absolute inset-x-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-md border border-line-strong bg-panel p-1"
           role="menu"
           aria-label="Starter templates"
         >
@@ -160,15 +159,15 @@
             <button
               type="button"
               role="menuitem"
-              class="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-colors hover:bg-raised"
+              class="flex w-full items-start gap-2.5 rounded px-2 py-2 text-left transition-colors hover:bg-raised"
               onclick={() => chooseTemplate(template)}
             >
-              <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-md bg-raised text-accent">
+              <span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded border border-line text-accent">
                 {@render templateIcon(template.id)}
               </span>
               <span class="min-w-0">
-                <span class="block text-[12px] font-semibold text-ink">{template.label}</span>
-                <span class="block text-[11px] leading-snug text-faint">{template.summary}</span>
+                <span class="mono block text-[11px] font-semibold text-ink">{template.label}</span>
+                <span class="mt-0.5 block text-[11px] leading-snug text-faint">{template.summary}</span>
               </span>
             </button>
           {/each}
@@ -177,20 +176,25 @@
     </div>
   </div>
 
-  <div class="pf-scroll flex shrink-0 gap-1.5 overflow-x-auto border-b border-line px-3 py-2.5">
+  <div class="flex items-center justify-between px-3 pb-1.5 pt-3">
+    <span class="micro text-faint">Documents</span>
+    <span class="mono tabular text-[10px] text-faint">{workspace.filtered.length}/{workspace.items.length}</span>
+  </div>
+
+  <div class="pf-scroll flex shrink-0 items-center gap-3 overflow-x-auto border-b border-line px-3 py-2">
     <button
       type="button"
       aria-pressed={workspace.activeTag === null}
-      class={`flex h-8 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[11px] font-medium transition-colors ${workspace.activeTag === null ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink'}`}
+      class={`mono shrink-0 text-[10px] uppercase tracking-wider ${workspace.activeTag === null ? 'text-accent' : 'text-faint hover:text-muted'}`}
       onclick={() => workspace.setTag(null)}
     >
-      All <span class="tabular opacity-70">{workspace.items.length}</span>
+      All
     </button>
     {#each workspace.tags as tag (tag)}
       <button
         type="button"
         aria-pressed={workspace.activeTag === tag}
-        class={`h-8 shrink-0 rounded-full border px-2.5 text-[11px] font-medium transition-colors ${workspace.activeTag === tag ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink'}`}
+        class={`mono shrink-0 text-[10px] uppercase tracking-wider ${workspace.activeTag === tag ? 'text-accent' : 'text-faint hover:text-muted'}`}
         onclick={() => workspace.setTag(workspace.activeTag === tag ? null : tag)}
       >
         #{tag}
@@ -198,51 +202,43 @@
     {/each}
   </div>
 
-  <div class="pf-scroll min-h-0 flex-1 overflow-y-auto px-2 py-2">
+  <div class="pf-scroll min-h-0 flex-1 overflow-y-auto">
     {#if workspace.filtered.length === 0}
-      <div class="flex h-full flex-col items-center justify-center px-4 text-center">
-        <div class="grid size-11 place-items-center rounded-xl border border-line bg-panel text-faint">
-          <FolderOpen size={19} />
-        </div>
-        <p class="mt-3 text-[13px] font-semibold">Nothing here yet</p>
-        <p class="mt-1 text-[11px] leading-relaxed text-faint">
-          Try another search, or start a new prompt from a template.
+      <div class="flex h-full flex-col items-center justify-center px-5 text-center">
+        <FolderOpen size={20} class="text-faint" />
+        <p class="mono mt-3 text-[11px] uppercase tracking-wider text-muted">No matches</p>
+        <p class="mt-1.5 text-[11px] leading-relaxed text-faint">
+          Clear the filter or create a document from a template.
         </p>
-        <button
-          type="button"
-          class="mt-3 rounded-lg border border-line px-3 py-2 text-[11px] font-medium text-accent hover:border-accent"
-          onclick={() => {
-            workspace.createFromTemplate(TEMPLATES[0]);
-            onNavigate?.();
-          }}
-        >
-          Create one
-        </button>
       </div>
     {:else}
-      <ul class="space-y-1">
+      <ul>
         {#each workspace.filtered as item (item.id)}
           <li
-            class={`group rounded-lg border px-1.5 py-2 transition-colors ${item.id === workspace.selectedId ? 'border-accent/40 bg-accent-soft/60' : 'border-transparent hover:border-line hover:bg-panel'}`}
+            class={`group relative border-b border-line/60 transition-colors ${item.id === workspace.selectedId ? 'bg-raised' : 'hover:bg-panel'}`}
           >
-            <div class="flex items-start gap-1">
+            {#if item.id === workspace.selectedId}
+              <span class="absolute inset-y-0 left-0 w-0.5 bg-accent"></span>
+            {/if}
+            <div class="flex items-center gap-1 pl-3 pr-1">
               <button
                 type="button"
-                class="min-w-0 flex-1 py-0.5 text-left"
+                class="flex min-w-0 flex-1 items-center gap-2.5 py-2.5 text-left"
                 aria-current={item.id === workspace.selectedId ? 'true' : undefined}
                 onclick={() => selectItem(item.id)}
               >
-                <span class="flex items-center gap-1.5">
-                  {@render kindBadge(item.kind)}
-                  {#if item.favorite}
-                    <Star size={11} class="fill-warn text-warn" />
-                  {/if}
+                <span
+                  class={`mono w-5 shrink-0 text-[10px] ${item.id === workspace.selectedId ? 'text-accent' : 'text-faint'}`}
+                >
+                  {KIND_CODE[item.kind]}
                 </span>
-                <span class="mt-1 block truncate text-[13px] font-medium text-ink">{item.title}</span>
-                <span class="mt-0.5 block truncate text-[11px] text-faint">
-                  {relativeTime(item.updatedAt)} · {item.tags.length
-                    ? item.tags.map((tag) => `#${tag}`).join(' ')
-                    : 'no tags'}
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-[13px] font-medium text-ink">{item.title}</span>
+                  <span class="mono mt-0.5 block truncate text-[10px] text-faint">
+                    {relativeTime(item.updatedAt)}{item.tags.length
+                      ? ` · ${item.tags.map((tag) => `#${tag}`).join(' ')}`
+                      : ''}
+                  </span>
                 </span>
               </button>
 
@@ -251,7 +247,7 @@
               >
                 <button
                   type="button"
-                  class="grid size-11 place-items-center rounded-md text-faint transition-colors hover:bg-raised hover:text-warn"
+                  class="grid size-11 place-items-center rounded text-faint transition-colors hover:bg-surface hover:text-warn"
                   aria-label={item.favorite ? `Unfavorite ${item.title}` : `Favorite ${item.title}`}
                   onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
                 >
@@ -259,7 +255,7 @@
                 </button>
                 <button
                   type="button"
-                  class="grid size-11 place-items-center rounded-md text-faint transition-colors hover:bg-raised hover:text-bad"
+                  class="grid size-11 place-items-center rounded text-faint transition-colors hover:bg-surface hover:text-bad"
                   aria-label={`Delete ${item.title}`}
                   onclick={() => removeItem(item.id, item.title)}
                 >
@@ -274,10 +270,10 @@
   </div>
 
   <div
-    class="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2 text-[10px] text-faint"
+    class="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2 mono text-[10px] text-faint"
   >
-    <BookOpen size={12} />
-    <span>Local-first · saved in this browser</span>
-    <span class="tabular ml-auto">{workspace.items.length} items</span>
+    <span class="dot text-good"></span>
+    <span>Local storage</span>
+    <span class="tabular ml-auto">{workspace.items.length} doc</span>
   </div>
 </div>

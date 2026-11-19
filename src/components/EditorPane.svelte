@@ -1,44 +1,65 @@
 <script lang="ts">
-  import CodeXml from '@lucide/svelte/icons/code-xml';
-  import Hash from '@lucide/svelte/icons/hash';
-  import ListChecks from '@lucide/svelte/icons/list-checks';
   import Plus from '@lucide/svelte/icons/plus';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
   import Star from '@lucide/svelte/icons/star';
   import Trash from '@lucide/svelte/icons/trash';
   import X from '@lucide/svelte/icons/x';
   import { workspace } from '../lib/stores/workspace.svelte';
+  import type { PromptKind } from '../lib/types';
   import { countMetrics, parseFrontmatter } from '../lib/utils/tokens';
 
   let item = $derived(workspace.active);
   let metrics = $derived(countMetrics(item?.content ?? ''));
   let report = $derived(parseFrontmatter(item?.content ?? ''));
+  let lineNumbers = $derived(Array.from({ length: metrics.lines }, (_, index) => index + 1));
 
   let textarea = $state<HTMLTextAreaElement | null>(null);
+  let gutter = $state<HTMLDivElement | null>(null);
   let tagDraft = $state('');
+  let cursor = $state({ line: 1, col: 1, selected: 0 });
+
+  const KINDS: PromptKind[] = ['skill', 'agents', 'master', 'provider', 'snippet'];
 
   const SNIPPETS: Array<{ label: string; title: string; value: string }> = [
-    { label: 'Frontmatter', title: 'Insert YAML frontmatter', value: '---\nname: \ndescription: \n---\n' },
-    { label: 'Section', title: 'Insert a section heading', value: '\n## \n' },
-    { label: 'Checklist', title: 'Insert a task list', value: '\n- [ ] \n' },
-    { label: 'Code fence', title: 'Insert a fenced code block', value: '\n~~~\n\n~~~\n' },
+    { label: 'YAML', title: 'Insert YAML frontmatter', value: '---\nname: \ndescription: \n---\n' },
+    { label: 'Heading', title: 'Insert a section heading', value: '\n## \n' },
+    { label: 'Task', title: 'Insert a task list', value: '\n- [ ] \n' },
+    { label: 'Fence', title: 'Insert a fenced code block', value: '\n~~~\n\n~~~\n' },
     {
-      label: 'Hard rules',
+      label: 'Rules',
       title: 'Insert a hard-rules block',
       value: '\n## Hard rules\n- Never invent behavior outside the spec.\n'
     }
   ];
 
+  function updateCursor(): void {
+    const el = textarea;
+    if (!el) return;
+    const before = el.value.slice(0, el.selectionStart);
+    const lines = before.split('\n');
+    cursor = {
+      line: lines.length,
+      col: (lines[lines.length - 1]?.length ?? 0) + 1,
+      selected: Math.abs(el.selectionEnd - el.selectionStart)
+    };
+  }
+
   function handleContentInput(event: Event): void {
     if (!item) return;
     const target = event.currentTarget as HTMLTextAreaElement;
     workspace.updateItem(item.id, { content: target.value });
+    updateCursor();
   }
 
   function handleTitleInput(event: Event): void {
     if (!item) return;
     const target = event.currentTarget as HTMLInputElement;
     workspace.updateItem(item.id, { title: target.value });
+  }
+
+  function handleKindChange(event: Event): void {
+    if (!item) return;
+    const target = event.currentTarget as HTMLSelectElement;
+    workspace.updateItem(item.id, { kind: target.value as PromptKind });
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
@@ -66,6 +87,7 @@
           Math.max(lineStart, start - Math.min(2, removed)),
           Math.max(lineStart, end - removed)
         );
+        updateCursor();
       });
       return;
     }
@@ -80,6 +102,7 @@
       requestAnimationFrame(() => {
         el.focus();
         el.setSelectionRange(start + 2, end + added);
+        updateCursor();
       });
       return;
     }
@@ -88,6 +111,7 @@
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(start + 2, start + 2);
+      updateCursor();
     });
   }
 
@@ -105,7 +129,12 @@
       el.focus();
       const caret = start + value.length;
       el.setSelectionRange(caret, caret);
+      updateCursor();
     });
+  }
+
+  function syncGutter(): void {
+    if (gutter && textarea) gutter.scrollTop = textarea.scrollTop;
   }
 
   function addTag(): void {
@@ -121,40 +150,49 @@
     event.preventDefault();
     addTag();
   }
+
+  let status = $derived(!report.present ? 'PLAIN MD' : report.valid ? 'FRONTMATTER OK' : `${report.errors.length} ISSUE${report.errors.length === 1 ? '' : 'S'}`);
 </script>
 
 <div class="flex h-full min-h-0 w-full flex-col bg-panel">
   {#if !item}
     <div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <div class="grid size-12 place-items-center rounded-xl border border-line bg-surface text-accent">
-        <Sparkles size={20} />
-      </div>
-      <h2 class="mt-4 text-sm font-semibold">No prompt selected</h2>
-      <p class="mt-1 max-w-xs text-xs leading-relaxed text-faint">
-        Pick one from the sidebar or create a blank document to start forging.
+      <span class="mono text-[11px] uppercase tracking-widest text-faint">No document open</span>
+      <p class="mt-2 max-w-xs text-xs leading-relaxed text-faint">
+        Pick one from the library or create a blank file.
       </p>
       <button
         type="button"
-        class="mt-4 inline-flex h-11 items-center gap-2 rounded-lg border border-accent/40 bg-accent-soft px-4 text-xs font-semibold text-accent transition-colors hover:border-accent"
+        class="mt-4 flex h-11 items-center gap-2 rounded-md bg-accent px-4 text-[12px] font-semibold text-accent-ink transition-colors hover:brightness-95"
         onclick={() => workspace.createBlank()}
       >
-        <Plus size={15} /> New prompt
+        <Plus size={15} /> New document
       </button>
     </div>
   {:else}
-    <div class="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2 sm:px-4">
-      <Hash size={14} class="shrink-0 text-faint" />
+    <div class="flex h-11 shrink-0 items-center gap-2 border-b border-line px-2 sm:px-3">
+      <span class="micro hidden shrink-0 text-faint sm:block">File</span>
       <input
         value={item.title}
         oninput={handleTitleInput}
-        aria-label="Prompt title"
+        aria-label="Document title"
         spellcheck="false"
-        class="min-w-0 flex-1 bg-transparent text-[13px] font-semibold text-ink outline-none placeholder:text-faint"
-        placeholder="Untitled prompt"
+        class="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-ink outline-none placeholder:text-faint"
+        placeholder="Untitled"
       />
+      <select
+        value={item.kind}
+        onchange={handleKindChange}
+        aria-label="Document kind"
+        class="mono h-7 shrink-0 rounded border border-line bg-surface px-1.5 text-[10px] uppercase tracking-wider text-muted outline-none hover:border-line-strong"
+      >
+        {#each KINDS as kind (kind)}
+          <option value={kind}>{kind}</option>
+        {/each}
+      </select>
       <button
         type="button"
-        class="grid size-11 shrink-0 place-items-center rounded-md text-faint transition-colors hover:bg-raised hover:text-warn"
+        class="grid size-11 shrink-0 place-items-center rounded text-faint transition-colors hover:bg-raised hover:text-warn"
         aria-label={item.favorite ? 'Remove from favorites' : 'Add to favorites'}
         onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
       >
@@ -162,8 +200,8 @@
       </button>
       <button
         type="button"
-        class="grid size-11 shrink-0 place-items-center rounded-md text-faint transition-colors hover:bg-raised hover:text-bad"
-        aria-label="Delete prompt"
+        class="grid size-11 shrink-0 place-items-center rounded text-faint transition-colors hover:bg-raised hover:text-bad"
+        aria-label="Delete document"
         onclick={() => {
           if (window.confirm(`Delete "${item.title}"? This cannot be undone.`)) {
             workspace.deleteItem(item.id);
@@ -174,15 +212,13 @@
       </button>
     </div>
 
-    <div class="pf-scroll flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-line px-3 py-2">
-      <span class="shrink-0 pr-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-faint">
-        Insert
-      </span>
+    <div class="pf-scroll flex h-9 shrink-0 items-center overflow-x-auto border-b border-line px-2">
+      <span class="micro mr-2 shrink-0 text-faint">Insert</span>
       {#each SNIPPETS as snippet (snippet.label)}
         <button
           type="button"
           title={snippet.title}
-          class="h-8 shrink-0 rounded-md border border-line px-2.5 text-[11px] font-medium text-muted transition-colors hover:border-accent hover:text-ink"
+          class="mono h-8 shrink-0 border-r border-line px-2.5 text-[10px] uppercase tracking-wider text-muted transition-colors hover:bg-raised hover:text-ink"
           onclick={() => insertSnippet(snippet.value)}
         >
           {snippet.label}
@@ -190,36 +226,48 @@
       {/each}
     </div>
 
-    <div class="min-h-0 flex-1">
+    <div class="flex min-h-0 flex-1 overflow-hidden">
+      <div
+        bind:this={gutter}
+        aria-hidden="true"
+        class="no-scrollbar w-11 shrink-0 overflow-hidden border-r border-line bg-surface pt-4 text-right font-mono text-[12px] leading-6 text-faint select-none"
+      >
+        {#each lineNumbers as line (line)}
+          <div class="tabular pr-2">{line}</div>
+        {/each}
+      </div>
       <textarea
         bind:this={textarea}
         value={item.content}
         oninput={handleContentInput}
         onkeydown={handleKeyDown}
+        onkeyup={updateCursor}
+        onclick={updateCursor}
+        onscroll={syncGutter}
+        wrap="off"
         spellcheck="false"
-        aria-label="Prompt content editor"
-        placeholder="Write your prompt here…"
-        class="pf-scroll h-full w-full resize-none bg-transparent px-4 py-4 font-mono text-[13px] leading-6 text-ink outline-none placeholder:text-faint sm:px-5"
+        aria-label="Document editor"
+        placeholder="Write Markdown here…"
+        class="pf-scroll h-full min-w-0 flex-1 resize-none bg-transparent px-3 py-4 font-mono text-[13px] leading-6 text-ink outline-none placeholder:text-faint"
       ></textarea>
     </div>
 
-    <div class="pf-scroll flex shrink-0 items-center gap-1.5 overflow-x-auto border-t border-line px-3 py-2">
+    <div class="pf-scroll flex shrink-0 items-center gap-2 overflow-x-auto border-t border-line px-3 py-1.5">
       {#each item.tags as tag (tag)}
         <span
-          class="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-line bg-surface pl-2.5 pr-1 text-[11px] text-muted"
+          class="mono inline-flex h-6 shrink-0 items-center gap-1 rounded-sm border border-line bg-surface pl-2 pr-1 text-[10px] text-muted"
         >
           #{tag}
           <button
             type="button"
-            class="grid size-5 place-items-center rounded-full text-faint transition-colors hover:text-bad"
+            class="grid size-5 place-items-center rounded-sm text-faint transition-colors hover:text-bad"
             aria-label={`Remove tag ${tag}`}
             onclick={() =>
-              workspace.updateItem(
-                item.id,
-                { tags: item.tags.filter((entry) => entry !== tag) }
-              )}
+              workspace.updateItem(item.id, {
+                tags: item.tags.filter((entry) => entry !== tag)
+              })}
           >
-            <X size={11} />
+            <X size={10} />
           </button>
         </span>
       {/each}
@@ -230,35 +278,20 @@
         maxlength="32"
         aria-label="Add a tag"
         placeholder="+ tag"
-        class="h-8 w-20 shrink-0 bg-transparent text-[11px] text-ink outline-none placeholder:text-faint focus:w-28"
+        class="mono h-7 w-20 shrink-0 bg-transparent text-[10px] text-ink outline-none placeholder:text-faint focus:w-28"
       />
     </div>
 
     <div
-      class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line bg-surface px-3 py-2 text-[11px] text-faint sm:px-4"
+      class="flex h-7 shrink-0 items-center gap-3 border-t border-line bg-surface px-3 mono text-[10px] text-faint"
     >
-      <span class="tabular"><span class="font-semibold text-muted">{metrics.tokens}</span> tokens</span>
-      <span class="tabular">{metrics.words} words</span>
-      <span class="tabular">{metrics.lines} lines</span>
-      <span class="tabular">{metrics.chars} chars</span>
-      <span class="tabular hidden sm:inline">{metrics.bytes} B</span>
-      <span
-        class={`ml-auto flex items-center gap-1 font-medium ${report.present && !report.valid ? 'text-bad' : 'text-good'}`}
-      >
-        <CodeXml size={12} />
-        {#if !report.present}
-          plain markdown
-        {:else if report.valid}
-          frontmatter ok
-        {:else}
-          {report.errors.length} issue{report.errors.length === 1 ? '' : 's'}
-        {/if}
-      </span>
-    </div>
-
-    <div class="hidden shrink-0 items-center gap-1.5 border-t border-line px-4 py-1.5 text-[10px] text-faint sm:flex">
-      <ListChecks size={11} />
-      Tab indents · Shift+Tab outdents · snippets insert at cursor
+      <span class="tabular">Ln {cursor.line}, Col {cursor.col}</span>
+      {#if cursor.selected > 0}
+        <span class="tabular hidden sm:inline">({cursor.selected} sel)</span>
+      {/if}
+      <span class="tabular ml-auto hidden sm:inline">{metrics.tokens} tk · {metrics.words} wd · {metrics.lines} ln</span>
+      <span class="tabular">{metrics.chars} ch</span>
+      <span class={report.present && !report.valid ? 'text-bad' : 'text-good'}>{status}</span>
     </div>
   {/if}
 </div>

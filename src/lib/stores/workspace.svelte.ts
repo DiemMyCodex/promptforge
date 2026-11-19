@@ -234,7 +234,7 @@ class WorkspaceStore {
 
   updateItem(
     id: string,
-    patch: Partial<Pick<PromptItem, 'title' | 'content' | 'tags' | 'favorite'>>
+    patch: Partial<Pick<PromptItem, 'title' | 'content' | 'tags' | 'favorite' | 'kind'>>
   ): void {
     const index = this.items.findIndex((item) => item.id === id);
     if (index === -1) return;

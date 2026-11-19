@@ -1,16 +1,25 @@
 <script lang="ts">
   import CodeXml from '@lucide/svelte/icons/code-xml';
   import Eye from '@lucide/svelte/icons/eye';
-  import Sparkles from '@lucide/svelte/icons/sparkles';
   import EditorPane from './components/EditorPane.svelte';
   import Header from './components/Header.svelte';
   import PreviewPane from './components/PreviewPane.svelte';
   import Sidebar from './components/Sidebar.svelte';
   import { workspace } from './lib/stores/workspace.svelte';
+  import { exportMarkdown } from './lib/utils/download';
 
   let sidebarOpen = $state(false);
   let item = $derived(workspace.active);
+
+  function handleGlobalKey(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      if (item) exportMarkdown(item);
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleGlobalKey} />
 
 <div class="flex h-dvh min-h-0 flex-col overflow-hidden bg-canvas text-ink">
   <Header bind:sidebarOpen />
@@ -19,22 +28,22 @@
     {#if sidebarOpen}
       <button
         type="button"
-        class="fixed inset-x-0 bottom-0 top-14 z-30 bg-black/55 backdrop-blur-[2px] lg:hidden"
+        class="fixed inset-x-0 bottom-0 top-[52px] z-30 bg-black/60 lg:hidden"
         aria-label="Close sidebar"
         onclick={() => (sidebarOpen = false)}
       ></button>
     {/if}
 
     <aside
-      class={`fixed bottom-0 left-0 top-14 z-40 w-[min(88vw,20rem)] border-r border-line transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-[19rem] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/40' : '-translate-x-full'}`}
-      aria-label="Saved prompts"
+      class={`fixed bottom-0 left-0 top-[52px] z-40 w-[min(88vw,20rem)] border-r border-line transition-transform duration-150 ease-out lg:static lg:z-auto lg:w-[19rem] lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      aria-label="Document library"
     >
       <Sidebar onNavigate={() => (sidebarOpen = false)} />
     </aside>
 
     <main class="flex min-w-0 flex-1 flex-col">
       <div
-        class="flex h-11 shrink-0 items-center gap-1 border-b border-line bg-surface px-2 lg:hidden"
+        class="flex h-11 shrink-0 items-stretch border-b border-line bg-surface px-2 lg:hidden"
         role="tablist"
         aria-label="Workspace view"
       >
@@ -42,22 +51,28 @@
           type="button"
           role="tab"
           aria-selected={workspace.editorTab === 'editor'}
-          class={`flex h-10 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold transition-colors ${workspace.editorTab === 'editor' ? 'bg-accent-soft text-accent' : 'text-muted'}`}
+          class={`relative flex items-center gap-1.5 px-3 mono text-[10px] uppercase tracking-wider ${workspace.editorTab === 'editor' ? 'text-ink' : 'text-faint'}`}
           onclick={() => workspace.setEditorTab('editor')}
         >
-          <CodeXml size={14} /> Editor
+          <CodeXml size={13} /> Editor
+          {#if workspace.editorTab === 'editor'}
+            <span class="absolute inset-x-2 bottom-0 h-0.5 bg-accent"></span>
+          {/if}
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={workspace.editorTab === 'preview'}
-          class={`flex h-10 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold transition-colors ${workspace.editorTab === 'preview' ? 'bg-accent-soft text-accent' : 'text-muted'}`}
+          class={`relative flex items-center gap-1.5 px-3 mono text-[10px] uppercase tracking-wider ${workspace.editorTab === 'preview' ? 'text-ink' : 'text-faint'}`}
           onclick={() => workspace.setEditorTab('preview')}
         >
-          <Eye size={14} /> Preview
+          <Eye size={13} /> Preview
+          {#if workspace.editorTab === 'preview'}
+            <span class="absolute inset-x-2 bottom-0 h-0.5 bg-accent"></span>
+          {/if}
         </button>
-        <span class="ml-auto min-w-0 truncate px-2 text-[11px] text-faint">
-          {item?.title ?? 'No prompt'}
+        <span class="ml-auto min-w-0 truncate self-center px-2 mono text-[10px] text-faint">
+          {item?.title ?? 'none'}
         </span>
       </div>
 
@@ -79,10 +94,10 @@
   </div>
 
   <footer
-    class="hidden h-7 shrink-0 items-center gap-2 border-t border-line px-4 text-[10px] text-faint lg:flex"
+    class="hidden h-6 shrink-0 items-center gap-2 border-t border-line bg-surface px-3 mono text-[10px] text-faint lg:flex"
   >
-    <Sparkles size={11} />
-    <span>Local-first · no telemetry · no API keys</span>
-    <span class="ml-auto tabular">Svelte 5 · Tailwind v4</span>
+    <span class="dot text-good"></span>
+    <span>Local session</span>
+    <span class="ml-auto tabular">PF/1.0 · Svelte 5</span>
   </footer>
 </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Braces from '@lucide/svelte/icons/braces';
   import Check from '@lucide/svelte/icons/check';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import GitBranch from '@lucide/svelte/icons/git-branch';
@@ -19,6 +18,7 @@
   let fileInput = $state<HTMLInputElement | null>(null);
   let flash = $state('');
   let error = $state('');
+  let item = $derived(workspace.active);
 
   $effect(() => {
     if (flash === '' && error === '') return;
@@ -36,55 +36,56 @@
     if (!file) return;
 
     if (file.size > 1024 * 1024) {
-      error = 'File too large — 1 MB max.';
+      error = 'FILE TOO LARGE · 1 MB MAX';
       return;
     }
 
     try {
-      const text = await file.text();
-      workspace.importDocument(file.name, text);
-      flash = `Imported ${file.name}`;
+      workspace.importDocument(file.name, await file.text());
+      flash = `IMPORTED ${file.name}`;
     } catch {
-      error = 'Could not read that file.';
+      error = 'READ FAILED';
     }
   }
 </script>
 
 <header
-  class="relative z-50 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface/95 px-2 backdrop-blur sm:px-4"
+  class="relative z-50 flex h-[52px] shrink-0 items-center gap-2 border-b border-line bg-surface px-2 sm:px-3"
 >
   <button
     type="button"
-    class="grid size-11 place-items-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-ink lg:hidden"
+    class="grid size-11 place-items-center rounded-md text-muted transition-colors hover:bg-raised hover:text-ink lg:hidden"
     aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
     onclick={() => (sidebarOpen = !sidebarOpen)}
   >
-    <PanelLeft size={18} />
+    <PanelLeft size={17} />
   </button>
 
   <div class="flex min-w-0 items-center gap-2.5">
-    <div
-      class="grid size-8 shrink-0 place-items-center rounded-[9px] bg-linear-to-br from-accent to-accent-2 text-canvas shadow-lg shadow-accent/10"
-    >
-      <Braces size={17} strokeWidth={2.4} />
+    <div class="grid size-7 shrink-0 place-items-center rounded-[4px] border border-accent/50 text-accent">
+      <span class="pf-mark">PF</span>
     </div>
-    <div class="min-w-0 leading-tight">
-      <p class="truncate text-sm font-semibold tracking-tight">PromptForge</p>
-      <p class="hidden truncate text-[10px] font-medium uppercase tracking-[0.14em] text-faint sm:block">
-        Prompt &amp; skill studio
-      </p>
-    </div>
+    <span class="mono text-[12px] font-semibold tracking-[0.08em]">PROMPTFORGE</span>
+    <span class="mx-1 hidden h-3 w-px bg-line-strong md:block"></span>
+    <span class="micro hidden truncate text-faint md:block">~/workspace</span>
+    {#if item}
+      <span class="mono hidden max-w-48 truncate text-[11px] text-muted lg:block">/ {item.title}</span>
+    {/if}
   </div>
 
-  <div class="ml-auto flex items-center gap-1.5">
+  <div class="ml-auto flex items-center gap-1">
     {#if flash}
-      <span class="hidden items-center gap-1 text-[11px] font-medium text-good sm:flex" role="status">
-        <Check size={13} /> <span class="max-w-40 truncate">{flash}</span>
+      <span class="mono hidden items-center gap-1.5 text-[10px] text-good sm:flex" role="status">
+        <Check size={12} /> {flash}
       </span>
     {/if}
     {#if error}
-      <span class="hidden text-[11px] font-medium text-bad sm:block" role="alert">{error}</span>
+      <span class="mono hidden text-[10px] text-bad sm:block" role="alert">{error}</span>
     {/if}
+
+    <span class="micro hidden items-center gap-1.5 border border-line px-2 py-1.5 text-muted sm:flex">
+      <span class="dot text-good"></span> Local
+    </span>
 
     <input
       bind:this={fileInput}
@@ -97,25 +98,25 @@
 
     <button
       type="button"
-      class="inline-flex h-11 items-center gap-2 rounded-lg border border-line px-2.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-ink sm:px-3"
+      class="flex h-11 items-center gap-1.5 rounded-md border border-line px-2.5 text-muted transition-colors hover:border-line-strong hover:text-ink"
       aria-label="Import Markdown file"
       onclick={() => fileInput?.click()}
     >
       <Upload size={15} />
-      <span class="hidden sm:inline">Import .md</span>
+      <span class="micro hidden sm:inline">Import</span>
     </button>
 
     <button
       type="button"
-      class="grid size-11 place-items-center rounded-lg border border-line text-muted transition-colors hover:border-accent hover:text-ink"
+      class="grid size-11 place-items-center rounded-md border border-line text-muted transition-colors hover:border-line-strong hover:text-ink"
       aria-label={workspace.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       title={workspace.theme === 'dark' ? 'Light theme' : 'Dark theme'}
       onclick={() => workspace.toggleTheme()}
     >
       {#if workspace.theme === 'dark'}
-        <Sun size={17} />
+        <Sun size={16} />
       {:else}
-        <Moon size={17} />
+        <Moon size={16} />
       {/if}
     </button>
 
@@ -123,13 +124,13 @@
       href={GITHUB_URL}
       target="_blank"
       rel="noopener noreferrer"
-      class="inline-flex h-11 items-center gap-2 rounded-lg border border-line px-2.5 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-ink sm:px-3"
-      aria-label="Open the project repository (placeholder URL)"
+      class="flex h-11 items-center gap-1.5 rounded-md border border-line px-2.5 text-muted transition-colors hover:border-line-strong hover:text-ink"
+      aria-label="Open the project repository"
       title="Open the PromptForge repository"
     >
       <GitBranch size={15} />
-      <span class="hidden md:inline">GitHub</span>
-      <ExternalLink size={12} class="hidden md:block" />
+      <span class="micro hidden lg:inline">Source</span>
+      <ExternalLink size={11} class="hidden lg:block" />
     </a>
   </div>
 </header>

@@ -82,18 +82,6 @@ function makeItem(
   };
 }
 
-function isBundledDoc(item: PromptItem, skill: TemplatePreset): boolean {
-  if (typeof item.sourceHash === 'string') {
-    return item.sourceHash === hashText(item.content);
-  }
-  // Legacy docs seeded before sourceHash existed: match the bundle signature.
-  return (
-    item.title === skill.label &&
-    item.tags.includes('library') &&
-    item.content.includes(`\nname: ${skill.label}\n`)
-  );
-}
-
 class WorkspaceStore {
   items = $state<PromptItem[]>([]);
   query = $state('');
@@ -146,8 +134,8 @@ class WorkspaceStore {
       this.librarySeeded = persisted.librarySeeded === true;
       // Idempotent: re-adds any bundled skill doc removed from local storage.
       this.ensureLibrary();
-      if (persisted.libraryRevision !== LIBRARY_REVISION) {
-        this.refreshLibrary();
+      // The repo bundle is the only source of truth for bundled docs.
+      if (this.refreshLibrary() > 0 || persisted.libraryRevision !== LIBRARY_REVISION) {
         this.persist();
       }
     } else {
@@ -246,14 +234,22 @@ class WorkspaceStore {
     return dropIds.size;
   }
 
-  /** Updates bundled docs when the bundle changes, but never overwrites user edits. */
+  /** Resets bundled docs to the repo bundle, including docs emptied in an older browser edit. */
   private refreshLibrary(): number {
     const skillById = new Map(SKILL_LIBRARY.map((skill) => [skill.id, skill]));
     let refreshed = 0;
 
     this.items = this.items.map((item) => {
       const skill = skillById.get(item.id);
-      if (!skill || !isBundledDoc(item, skill) || item.content === skill.content) return item;
+      if (!skill) return item;
+
+      const unchanged =
+        item.title === skill.label &&
+        item.kind === skill.kind &&
+        item.content === skill.content &&
+        item.tags.join('\n') === skill.tags.join('\n');
+
+      if (unchanged) return item;
       refreshed += 1;
       return {
         ...item,
@@ -262,6 +258,7 @@ class WorkspaceStore {
         content: skill.content,
         tags: [...skill.tags],
         sourceHash: hashText(skill.content),
+        favorite: false,
         updatedAt: Date.now()
       };
     });

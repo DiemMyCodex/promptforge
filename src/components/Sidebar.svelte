@@ -7,7 +7,6 @@
   import Search from '@lucide/svelte/icons/search';
   import Star from '@lucide/svelte/icons/star';
   import Terminal from '@lucide/svelte/icons/terminal';
-  import Trash from '@lucide/svelte/icons/trash';
   import X from '@lucide/svelte/icons/x';
   import { SKILL_LIBRARY } from '../lib/skill-library';
   import { workspace } from '../lib/stores/workspace.svelte';
@@ -97,9 +96,6 @@
     onNavigate?.();
   }
 
-  function removeItem(id: string, title: string): void {
-    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) workspace.deleteItem(id);
-  }
 </script>
 
 <svelte:window onkeydown={handleShortcut} />
@@ -284,14 +280,6 @@
                   onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
                 >
                   <Star size={14} class={item.favorite ? 'fill-warn text-warn' : ''} />
-                </button>
-                <button
-                  type="button"
-                  class="row-icon"
-                  aria-label={`Delete ${item.title}`}
-                  onclick={() => removeItem(item.id, item.title)}
-                >
-                  <Trash size={14} />
                 </button>
               </div>
             </div>

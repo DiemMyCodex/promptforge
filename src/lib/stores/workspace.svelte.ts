@@ -382,12 +382,6 @@ class WorkspaceStore {
     this.persist();
   }
 
-  deleteItem(id: string): void {
-    this.items = this.items.filter((item) => item.id !== id);
-    if (this.selectedId === id) this.selectedId = this.items[0]?.id ?? null;
-    this.persist();
-  }
-
   duplicateItem(id: string): void {
     const source = this.items.find((item) => item.id === id);
     if (!source) return;

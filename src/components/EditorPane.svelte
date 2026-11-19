@@ -1,7 +1,6 @@
 <script lang="ts">
   import Plus from '@lucide/svelte/icons/plus';
   import Star from '@lucide/svelte/icons/star';
-  import Trash from '@lucide/svelte/icons/trash';
   import X from '@lucide/svelte/icons/x';
   import { workspace } from '../lib/stores/workspace.svelte';
   import type { PromptKind } from '../lib/types';
@@ -208,18 +207,6 @@
         onclick={() => workspace.updateItem(item.id, { favorite: !item.favorite })}
       >
         <Star size={15} class={item.favorite ? 'fill-warn text-warn' : ''} />
-      </button>
-      <button
-        type="button"
-        class="row-icon"
-        aria-label="Delete document"
-        onclick={() => {
-          if (window.confirm(`Delete "${item.title}"? This cannot be undone.`)) {
-            workspace.deleteItem(item.id);
-          }
-        }}
-      >
-        <Trash size={15} />
       </button>
     </div>
 

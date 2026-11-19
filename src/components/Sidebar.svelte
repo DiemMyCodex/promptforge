@@ -9,15 +9,17 @@
   import Terminal from '@lucide/svelte/icons/terminal';
   import Trash from '@lucide/svelte/icons/trash';
   import X from '@lucide/svelte/icons/x';
+  import { SKILL_LIBRARY } from '../lib/skill-library';
   import { workspace } from '../lib/stores/workspace.svelte';
   import { TEMPLATES } from '../lib/templates';
   import type { PromptKind, TemplatePreset } from '../lib/types';
 
   interface Props {
     onNavigate?: () => void;
+    onOpenLibrary?: () => void;
   }
 
-  let { onNavigate }: Props = $props();
+  let { onNavigate, onOpenLibrary }: Props = $props();
 
   let searchInput = $state(workspace.query);
   let menuOpen = $state(false);
@@ -185,6 +187,16 @@
         </div>
       {/if}
     </div>
+
+    <button
+      type="button"
+      class="ios-btn tap w-full justify-start"
+      onclick={() => onOpenLibrary?.()}
+    >
+      <Braces size={15} class="text-accent" />
+      <span>Skill library</span>
+      <span class="mono ml-auto text-[10px] text-label-3">{SKILL_LIBRARY.length}</span>
+    </button>
   </div>
 
   <div class="flex items-center justify-between px-4 pb-1.5 pt-4">

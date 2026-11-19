@@ -5,10 +5,12 @@
   import Header from './components/Header.svelte';
   import PreviewPane from './components/PreviewPane.svelte';
   import Sidebar from './components/Sidebar.svelte';
+  import SkillLibrary from './components/SkillLibrary.svelte';
   import { workspace } from './lib/stores/workspace.svelte';
   import { exportMarkdown } from './lib/utils/download';
 
   let sidebarOpen = $state(false);
+  let libraryOpen = $state(false);
   let item = $derived(workspace.active);
 
   function handleGlobalKey(event: KeyboardEvent): void {
@@ -39,7 +41,10 @@
       aria-label="Document library"
     >
       <div class="glass h-full overflow-hidden rounded-[20px]">
-        <Sidebar onNavigate={() => (sidebarOpen = false)} />
+        <Sidebar
+          onNavigate={() => (sidebarOpen = false)}
+          onOpenLibrary={() => (libraryOpen = true)}
+        />
       </div>
     </aside>
 
@@ -87,4 +92,6 @@
       </div>
     </main>
   </div>
+
+  <SkillLibrary open={libraryOpen} onClose={() => (libraryOpen = false)} />
 </div>

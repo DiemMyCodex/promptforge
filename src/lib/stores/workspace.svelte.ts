@@ -82,17 +82,6 @@ function makeItem(
   };
 }
 
-function inferKind(fileName: string, content: string): PromptKind {
-  const name = fileName.toLowerCase();
-  const head = content.slice(0, 600);
-
-  if (name.includes('agents.md')) return 'agents';
-  if (name.includes('skill') || /^---[\s\S]*?\n---/.test(content)) return 'skill';
-  if (/master prompt|build brief/i.test(head)) return 'master';
-  if (/opencode|"provider"\s*:/i.test(head)) return 'provider';
-  return 'snippet';
-}
-
 function isBundledDoc(item: PromptItem, skill: TemplatePreset): boolean {
   if (typeof item.sourceHash === 'string') {
     return item.sourceHash === hashText(item.content);
@@ -414,42 +403,6 @@ class WorkspaceStore {
     this.persist();
   }
 
-  importDocument(fileName: string, content: string): string {
-    this.dedupeSkillDocs();
-    const title = fileName.replace(/\.(md|markdown|txt)$/i, '') || 'Imported prompt';
-    const kind = inferKind(fileName, content);
-    const existing = this.items.find(
-      (item) => item.title.toLowerCase() === title.toLowerCase() && item.kind === kind
-    );
-
-    if (existing) {
-      this.items = this.items.map((item) =>
-        item.id === existing.id
-          ? {
-              ...item,
-              content,
-              tags: [...new Set([...item.tags, 'imported'])],
-              updatedAt: Date.now()
-            }
-          : item
-      );
-      this.selectedId = existing.id;
-      this.activeTag = null;
-      this.query = '';
-      this.editorTab = 'editor';
-      this.persist();
-      return existing.id;
-    }
-
-    const item = makeItem({ title, kind, content, tags: ['imported'] });
-    this.items = [item, ...this.items];
-    this.selectedId = item.id;
-    this.activeTag = null;
-    this.query = '';
-    this.editorTab = 'editor';
-    this.persist();
-    return item.id;
-  }
 }
 
 export const workspace = new WorkspaceStore();

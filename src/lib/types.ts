@@ -1,0 +1,52 @@
+export type PromptKind = 'skill' | 'agents' | 'master' | 'provider' | 'snippet';
+
+export interface PromptItem {
+  id: string;
+  title: string;
+  kind: PromptKind;
+  content: string;
+  tags: string[];
+  favorite: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type FrontmatterValue = string | number | boolean | string[];
+
+export interface SkillFrontmatter {
+  name: string;
+  description: string;
+  allowedTools?: string;
+  argumentHint?: string;
+  model?: string;
+  disable?: boolean;
+  [key: string]: FrontmatterValue | undefined;
+}
+
+export interface TemplatePreset {
+  id: string;
+  label: string;
+  summary: string;
+  kind: PromptKind;
+  tags: string[];
+  content: string;
+}
+
+export interface FrontmatterReport {
+  present: boolean;
+  valid: boolean;
+  errors: string[];
+  data: Partial<SkillFrontmatter> | null;
+  body: string;
+}
+
+export interface TextMetrics {
+  chars: number;
+  words: number;
+  lines: number;
+  tokens: number;
+  bytes: number;
+}
+
+export type ThemeMode = 'dark' | 'light';
+export type EditorTab = 'editor' | 'preview';

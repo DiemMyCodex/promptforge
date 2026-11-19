@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PromptForge">
+  <rect width="64" height="64" rx="16" fill="#11141b" />
+  <path d="M14 18h26l10 10v18H14z" fill="none" stroke="#8aa2ff" stroke-width="4" stroke-linejoin="round" />
+  <path d="M22 30h20M22 38h13" fill="none" stroke="#c69bff" stroke-width="4" stroke-linecap="round" />
+</svg>

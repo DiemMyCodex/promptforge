@@ -20,8 +20,11 @@
 <header class="glass flex h-14 shrink-0 items-center gap-2 rounded-[18px] px-2 sm:px-3">
   <button
     type="button"
+    id="drawer-toggle"
     class="ios-icon tap lg:hidden"
     aria-label={sidebarOpen ? 'Close library' : 'Open library'}
+    aria-controls="doc-drawer"
+    aria-expanded={sidebarOpen}
     onclick={() => (sidebarOpen = !sidebarOpen)}
   >
     <PanelLeft size={17} />

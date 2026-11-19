@@ -99,7 +99,7 @@
     <div class="scroll-thin min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
       {#if report.present}
         <details class="pf-details group-card" bind:open={fmOpen}>
-          <summary class="flex h-10 cursor-pointer items-center gap-2 px-3.5">
+          <summary class="flex h-11 cursor-pointer items-center gap-2 px-3.5">
             <span class="dot {report.valid ? 'text-good' : 'text-bad'}"></span>
             <span class="text-[12px] font-medium text-label">Frontmatter</span>
             <span class="mono text-[10px] text-label-3">· {fieldCount} keys</span>

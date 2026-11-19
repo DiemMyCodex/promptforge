@@ -87,7 +87,7 @@
       {#if searchInput}
         <button
           type="button"
-          class="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-label-3 transition-colors hover:text-label"
+          class="absolute right-0.5 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-label-3 transition-colors hover:text-label"
           aria-label="Clear search"
           onclick={() => (searchInput = '')}
         >
@@ -116,11 +116,11 @@
     </span>
   </div>
 
-  <div class="scroll-thin flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2.5">
+  <div class="scroll-thin flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-1">
     <button
       type="button"
       aria-pressed={workspace.activeTag === null}
-      class={`mono h-7 shrink-0 rounded-full border px-2.5 text-[10px] transition-colors ${workspace.activeTag === null ? 'border-accent/40 bg-accent-soft text-accent' : 'border-separator text-label-3 hover:text-label-2'}`}
+      class="chip"
       onclick={() => workspace.setTag(null)}
     >
       All
@@ -129,7 +129,7 @@
       <button
         type="button"
         aria-pressed={workspace.activeTag === tag}
-        class={`mono h-7 shrink-0 rounded-full border px-2.5 text-[10px] transition-colors ${workspace.activeTag === tag ? 'border-accent/40 bg-accent-soft text-accent' : 'border-separator text-label-3 hover:text-label-2'}`}
+        class="chip"
         onclick={() => workspace.setTag(workspace.activeTag === tag ? null : tag)}
       >
         #{tag}
@@ -156,14 +156,14 @@
           {@const selected = item.id === workspace.selectedId}
           <li class="group relative">
             <div
-              class={`flex items-center gap-1 rounded-[12px] border px-2 py-1.5 transition-colors ${selected ? 'border-separator bg-fill' : 'border-transparent hover:bg-fill'}`}
+              class={`flex items-center gap-1 rounded-[12px] border px-2 py-0.5 transition-colors ${selected ? 'border-separator bg-fill' : 'border-transparent hover:bg-fill'}`}
             >
               {#if selected}
                 <span class="absolute inset-y-2.5 left-0 w-[3px] rounded-full bg-accent"></span>
               {/if}
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
+                class="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
                 aria-current={selected ? 'true' : undefined}
                 onclick={() => selectItem(item.id)}
               >

@@ -4,6 +4,7 @@
   import Search from '@lucide/svelte/icons/search';
   import Terminal from '@lucide/svelte/icons/terminal';
   import X from '@lucide/svelte/icons/x';
+  import { tick } from 'svelte';
   import { SKILL_LIBRARY } from '../lib/skill-library';
   import { workspace } from '../lib/stores/workspace.svelte';
   import type { TemplatePreset } from '../lib/types';
@@ -16,6 +17,23 @@
   let { open = false, onClose }: Props = $props();
 
   let query = $state('');
+
+  let dialogEl = $state<HTMLDivElement | null>(null);
+  let searchEl = $state<HTMLInputElement | null>(null);
+
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  // Move focus into the dialog on open, hand it back to the trigger on close.
+  $effect(() => {
+    if (!open) return;
+    const returnTo =
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    void tick().then(() => searchEl?.focus());
+    return () => returnTo?.focus();
+  });
 
   let filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
@@ -30,6 +48,24 @@
 
   function handleKey(event: KeyboardEvent): void {
     if (event.key === 'Escape' && open) onClose?.();
+  }
+
+  // aria-modal only promises the trap; keep Tab inside the dialog.
+  function trapTab(event: KeyboardEvent): void {
+    if (event.key !== 'Tab' || !dialogEl) return;
+    const nodes = Array.from(dialogEl.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+      (el) => el.offsetParent !== null
+    );
+    if (nodes.length === 0) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function choose(skill: TemplatePreset): void {
@@ -51,10 +87,13 @@
 
   <div class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-3">
     <div
+      bind:this={dialogEl}
+      onkeydown={trapTab}
+      tabindex="-1"
       class="glass pointer-events-auto flex max-h-[min(85dvh,44rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px]"
       role="dialog"
       aria-modal="true"
-      aria-label="Skill library"
+      aria-labelledby="skill-library-title"
     >
       <div class="flex h-14 shrink-0 items-center gap-2 border-b border-separator px-4">
         <div
@@ -63,7 +102,9 @@
           <Braces size={16} />
         </div>
         <div class="min-w-0">
-          <h2 class="text-[13px] font-semibold tracking-[-0.02em]">Skill library</h2>
+          <h2 id="skill-library-title" class="text-[13px] font-semibold tracking-[-0.02em]">
+            Skill library
+          </h2>
           <p class="micro">{SKILL_LIBRARY.length} bundled · offline</p>
         </div>
         <button
@@ -83,6 +124,7 @@
             class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-label-3"
           />
           <input
+            bind:this={searchEl}
             bind:value={query}
             type="search"
             placeholder="Search skills by name, description or content"

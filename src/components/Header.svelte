@@ -1,11 +1,13 @@
 <script lang="ts">
   import Command from '@lucide/svelte/icons/command';
   import ExternalLink from '@lucide/svelte/icons/external-link';
+  import FileText from '@lucide/svelte/icons/file-text';
   import GitBranch from '@lucide/svelte/icons/git-branch';
   import Moon from '@lucide/svelte/icons/moon';
   import PanelLeft from '@lucide/svelte/icons/panel-left';
   import Sun from '@lucide/svelte/icons/sun';
   import { GITHUB_URL } from '../lib/config';
+  import { REA_VERSION } from '../lib/rea-docs';
   import { workspace } from '../lib/stores/workspace.svelte';
 
   interface Props {
@@ -69,6 +71,16 @@
         <Moon size={16} />
       {/if}
     </button>
+
+    <a
+      href="#/docs/rea"
+      class="ios-btn tap"
+      aria-label={`Open the REA ${REA_VERSION} documentation`}
+      title={`REA ${REA_VERSION} documentation`}
+    >
+      <FileText size={15} />
+      <span class="hidden lg:inline">REA {REA_VERSION}</span>
+    </a>
 
     <a
       href={GITHUB_URL}

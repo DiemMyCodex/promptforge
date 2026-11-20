@@ -34,6 +34,14 @@ export interface TemplatePreset {
   content: string;
 }
 
+/** One static section of the bundled REA documentation page. */
+export interface ReaDocSection {
+  id: string;
+  label: string;
+  path: string;
+  content: string;
+}
+
 export interface FrontmatterReport {
   present: boolean;
   valid: boolean;

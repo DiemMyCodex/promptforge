@@ -78,27 +78,44 @@ export function parseFrontmatter(source: string): FrontmatterReport {
 
   const errors: string[] = [];
   const data: Record<string, FrontmatterValue> = {};
-  const seen = new Set<string>();
+
+  // Shallow indentation stack: a key with an empty value opens a nested map.
+  // This covers real SKILL.md metadata blocks without pulling in a YAML parser.
+  interface Level {
+    indent: number;
+    target: Record<string, FrontmatterValue>;
+  }
+  const stack: Level[] = [{ indent: -1, target: data }];
 
   lines.slice(1, closeIndex).forEach((line, index) => {
     const lineNumber = index + 2;
-
     if (line.trim() === '') return;
-    if (/^\s/.test(line)) {
-      errors.push(`Line ${lineNumber}: nested YAML is not supported in this flat previewer.`);
+
+    const indent = /^[\t ]*/.exec(line)?.[0].length ?? 0;
+    if (indent > 0 && stack.length === 1) {
+      errors.push(`Line ${lineNumber}: unexpected indentation without a parent key.`);
       return;
     }
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
 
-    const match = KEY_PATTERN.exec(line);
+    const match = KEY_PATTERN.exec(line.trim());
     if (!match) {
       errors.push(`Line ${lineNumber}: expected "key: value".`);
       return;
     }
 
     const key = match[1];
-    if (seen.has(key)) errors.push(`Line ${lineNumber}: duplicate key "${key}".`);
-    seen.add(key);
-    data[key] = parseScalar(match[2]);
+    const parent = stack[stack.length - 1].target;
+    if (key in parent) errors.push(`Line ${lineNumber}: duplicate key "${key}".`);
+
+    const value = parseScalar(match[2]);
+    if (value === '') {
+      const child: Record<string, FrontmatterValue> = {};
+      parent[key] = child;
+      stack.push({ indent, target: child });
+    } else {
+      parent[key] = value;
+    }
   });
 
   const name = data.name;

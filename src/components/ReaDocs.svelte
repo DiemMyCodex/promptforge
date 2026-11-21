@@ -19,6 +19,11 @@
 
   function formatValue(value: unknown): string {
     if (Array.isArray(value)) return value.join(', ');
+    if (value && typeof value === 'object') {
+      return Object.entries(value)
+        .map(([key, nested]) => `${key}: ${formatValue(nested)}`)
+        .join(' · ');
+    }
     if (typeof value === 'boolean') return value ? 'true' : 'false';
     return String(value ?? '');
   }

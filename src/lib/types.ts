@@ -13,7 +13,11 @@ export interface PromptItem {
   sourceHash?: string;
 }
 
-export type FrontmatterValue = string | number | boolean | string[];
+export interface FrontmatterMap {
+  [key: string]: FrontmatterValue | undefined;
+}
+
+export type FrontmatterValue = string | number | boolean | string[] | FrontmatterMap;
 
 export interface SkillFrontmatter {
   name: string;
